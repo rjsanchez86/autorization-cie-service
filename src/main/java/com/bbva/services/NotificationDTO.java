@@ -1,41 +1,163 @@
 package com.bbva.services;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @XmlRootElement
 public class NotificationDTO {
+
+    @JsonProperty("CANALOR")
     private String canalor;
+
+    @JsonProperty("CONTROR")
     private String contror;
+
+    @JsonProperty("SERVIOR")
     private String servior;
+
+    @JsonProperty("TIPOPER")
     private String tipoper;
-    private Double imptota;
-    private String guiacie;
-    private Long nummens;
-    private Long idmsjpa;
-    private String timesta;
-    private String trminal;
-    private String cncepto;
-    private String rferenc;
-    private String fillmas;
-    private String filesp2;
-    private String fillnum;
+
+    @JsonProperty("NUMCONV")
     private String cnvenio;
-    private String filesp1;
+
+    @JsonProperty("COMISON")
+    private Double comison;
+
+    @JsonProperty("IVA")
+    private Double iva;
+
+    @JsonProperty("BANDERA")
+    private String bandera;
+
+    @JsonProperty("NUMETDC")
+    private String numetdc;
+
+    @JsonProperty("TIPPROM")
+    private String tipprom;
+
+    @JsonProperty("MARCAPR")
+    private String marcapr;
+
+    @JsonProperty("TIPOTAR")
+    private String tipotar;
+
+    @JsonProperty("PLAZOMA")
+    private String plazoma;
+
+    @JsonProperty("REFEREN")
+    private String rferenc;
+
+    @JsonProperty("CONCEPT")
+    private String cncepto;
+
+    @JsonProperty("IMEFECT")
+    private Double imefect;
+
+    @JsonProperty("IMTOTAL")
+    private Double imptota;
+
+    @JsonProperty("CTACARG")
+    private String ctacarg;
+
+    @JsonProperty("DISPONI")
+    private Double disponi;
+
+    @JsonProperty("DIVISA")
     private String moneda;
+
+    @JsonProperty("TERMINA")
+    private String trminal;
+
+    @JsonProperty("USUARIO")
+    private String usuario;
+
+    @JsonProperty("FOLIOCA")
+    private String folioca;
+
+    @JsonProperty("TIPTRAS")
+    private String tiptras;
+
+    @JsonProperty("DCOCARG")
+    private String dcocarg;
+
+    @JsonProperty("REFERCA")
+    private String referca;
+
+    @JsonProperty("AORIGAB")
+    private String aorigab;
+
+    @JsonProperty("REFERAB")
+    private String referab;
+
+    // Campos adicionales para trazabilidad y respuesta del servicio
+    @JsonProperty("GUIACIE")
+    private String guiacie;
+
+    @JsonProperty("NUMMENS")
+    private Long nummens;
+
+    @JsonProperty("IDMSJPA")
+    private Long idmsjpa;
+
+    @JsonProperty("TIMESTA")
+    private String timesta;
+
+    @JsonProperty("FILLMAS")
+    private String fillmas;
+
+    @JsonProperty("FILESP2")
+    private String filesp2;
+
+    @JsonProperty("FILLNUM")
+    private String fillnum;
+
+    @JsonProperty("FILESP1")
+    private String filesp1;
+
+    @JsonProperty("IDED")
     private String ided;
+
+    @JsonProperty("AUTORIZ")
     private String autoriz;
+
+    @JsonProperty("CODRESP")
     private String codresp;
+
+    @JsonProperty("TRNS")
     private String trns;
+
+    @JsonProperty("FECPAGO")
     private String fecpago;
+
+    @JsonProperty("HORPAGO")
     private String horpago;
+
+    @JsonProperty("CODFIJO")
     private String codfijo;
+
+    @JsonProperty("FECCAP")
     private String feccap;
+
+    @JsonProperty("FLPAGEM")
     private String flpagem;
+
+    @JsonProperty("TPPAGEM")
     private String tppagem;
+
+    @JsonProperty("CLCUREM")
     private String clcurem;
+
+    @JsonProperty("IMMINEM")
     private Double imminem;
+
+    @JsonProperty("IMMAXEM")
     private Double immaxem;
+
+    @JsonProperty("FHVIGEM")
     private String fhvigem;
+
+    @JsonProperty("CERTIEM")
     private String certiem;
 
     public NotificationDTO() {}
@@ -107,4 +229,40 @@ public class NotificationDTO {
     public void setFhvigem(String fhvigem) { this.fhvigem = fhvigem; }
     public String getCertiem() { return certiem; }
     public void setCertiem(String certiem) { this.certiem = certiem; }
+    public Double getComison() { return comison; }
+    public void setComison(Double comison) { this.comison = comison; }
+    public Double getIva() { return iva; }
+    public void setIva(Double iva) { this.iva = iva; }
+    public String getBandera() { return bandera; }
+    public void setBandera(String bandera) { this.bandera = bandera; }
+    public String getNumetdc() { return numetdc; }
+    public void setNumetdc(String numetdc) { this.numetdc = numetdc; }
+    public String getTipprom() { return tipprom; }
+    public void setTipprom(String tipprom) { this.tipprom = tipprom; }
+    public String getMarcapr() { return marcapr; }
+    public void setMarcapr(String marcapr) { this.marcapr = marcapr; }
+    public String getTipotar() { return tipotar; }
+    public void setTipotar(String tipotar) { this.tipotar = tipotar; }
+    public String getPlazoma() { return plazoma; }
+    public void setPlazoma(String plazoma) { this.plazoma = plazoma; }
+    public Double getImefect() { return imefect; }
+    public void setImefect(Double imefect) { this.imefect = imefect; }
+    public String getCtacarg() { return ctacarg; }
+    public void setCtacarg(String ctacarg) { this.ctacarg = ctacarg; }
+    public Double getDisponi() { return disponi; }
+    public void setDisponi(Double disponi) { this.disponi = disponi; }
+    public String getUsuario() { return usuario; }
+    public void setUsuario(String usuario) { this.usuario = usuario; }
+    public String getFolioca() { return folioca; }
+    public void setFolioca(String folioca) { this.folioca = folioca; }
+    public String getTiptras() { return tiptras; }
+    public void setTiptras(String tiptras) { this.tiptras = tiptras; }
+    public String getDcocarg() { return dcocarg; }
+    public void setDcocarg(String dcocarg) { this.dcocarg = dcocarg; }
+    public String getReferca() { return referca; }
+    public void setReferca(String referca) { this.referca = referca; }
+    public String getAorigab() { return aorigab; }
+    public void setAorigab(String aorigab) { this.aorigab = aorigab; }
+    public String getReferab() { return referab; }
+    public void setReferab(String referab) { this.referab = referab; }
 }

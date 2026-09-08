@@ -42,23 +42,33 @@ public class NotificationService {
 
     private Response process(String tsecHeader, String consumerRequestIdHeader, NotificationDTO dto) {
 
-        // 1. VALIDACIÓN MANDATORIOS -> 96 (System Malfunction)
+        // 1. VALIDACIÓN MANDATORIOS AJUSTADA AL JSON RECIBIDO
         if (isMissing(dto.getCanalor()) || isMissing(dto.getContror()) || isMissing(dto.getServior())
-                || isMissing(dto.getTipoper()) || isMissing(dto.getGuiacie()) || dto.getNummens() == null
-                || isMissing(dto.getTimesta()) || isMissing(dto.getTrminal()) || isMissing(dto.getRferenc())
-                || isMissing(dto.getCnvenio()) || isMissing(dto.getMoneda()) || isMissing(dto.getIded())
-                || isMissing(dto.getTrns())) {
+                || isMissing(dto.getTipoper()) || isMissing(dto.getTrminal()) || isMissing(dto.getRferenc())
+                || isMissing(dto.getCnvenio()) || isMissing(dto.getMoneda())) {
             
             dto.setCodresp("96");
             return buildResponse(tsecHeader, consumerRequestIdHeader, dto);
         }
 
-        // 2. SIMULACIÓN FORZADA (Si se envía codresp explícito en la petición diferente de 00)
+        // Asignación de valores por defecto para campos ausentes en el JSON
+        if (isMissing(dto.getGuiacie())) dto.setGuiacie("DEFAULT_GUIA");
+        if (dto.getNummens() == null) dto.setNummens(1L);
+        if (isMissing(dto.getTimesta())) dto.setTimesta(ZonedDateTime.now().toString());
+        if (isMissing(dto.getIded())) dto.setIded("DEFAULT_IDED");
+        if (isMissing(dto.getTrns())) dto.setTrns("DEFAULT_TRNS");
+
+        // Normalizar imptota si sólo se recibe imefect
+        if ((dto.getImptota() == null || dto.getImptota() == 0) && dto.getImefect() != null) {
+            dto.setImptota(dto.getImefect());
+        }
+
+        // 2. SIMULACIÓN FORZADA (Si se envía codresp explícito diferente de 00)
         if (dto.getCodresp() != null && !dto.getCodresp().isEmpty() && !"00".equals(dto.getCodresp())) {
             return buildResponse(tsecHeader, consumerRequestIdHeader, dto);
         }
 
-        // 3. REGLAS DINÁMICAS POR VALOR EN 'rferenc' (Para pruebas de integración)
+        // 3. REGLAS DINÁMICAS POR VALOR EN 'rferenc'
         String ref = dto.getRferenc().toUpperCase();
 
         if (ref.endsWith("SUSP")) {
@@ -88,11 +98,9 @@ public class NotificationService {
         } else if (ref.endsWith("UNAVAIL")) {
             dto.setCodresp("91"); // Entity Unavailable
         } else {
-            // Si la referencia no indica error, la transacción se marca Aprobada
             dto.setCodresp("00");
         }
 
-        // Si la respuesta resultó con algún código de rechazo/error, retornamos directamente
         if (!"00".equals(dto.getCodresp())) {
             return buildResponse(tsecHeader, consumerRequestIdHeader, dto);
         }

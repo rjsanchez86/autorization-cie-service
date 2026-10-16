@@ -189,7 +189,7 @@ public class NotificationService {
     }
 
     private boolean isMissing(String value) {
-        return value == null || value.trim().isEmpty();
+        return value == "" || value.trim().isEmpty();
     }
 
     private Response buildResponse(String tsecHeader, String consumerRequestIdHeader, NotificationDTO dto) {

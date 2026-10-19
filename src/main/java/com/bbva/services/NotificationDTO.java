@@ -2,6 +2,7 @@ package com.bbva.services;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 @XmlRootElement
@@ -161,6 +162,14 @@ public class NotificationDTO {
 
     @JsonProperty("certiem")
     private String certiem;
+
+    @JsonIgnore
+    private Integer code;
+
+    @JsonIgnore
+    public Integer getCode() { return code; }
+    @JsonProperty("code")
+    public void setCode(Integer code) { this.code = code; }
 
     public NotificationDTO() {}
 

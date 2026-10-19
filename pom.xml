@@ -31,6 +31,7 @@
             <version>1.19.4</version>
         </dependency>
 
+        <!-- Jackson 1.x proporcionado transitivamente por jersey-json -->
         <!-- JAXB para serialización JSON/XML -->
         <dependency>
             <groupId>javax.xml.bind</groupId>
@@ -42,15 +43,10 @@
             <artifactId>jaxb-runtime</artifactId>
             <version>2.3.1</version>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>2.15.2</version>
-        </dependency>
     </dependencies>
 
     <build>
-        <finalName>bbva-rest</finalName>
+        <finalName>ROOT</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

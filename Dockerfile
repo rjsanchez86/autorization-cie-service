@@ -6,6 +6,6 @@ RUN mvn clean package -DskipTests
 
 FROM tomcat:8.5-jdk8-corretto
 RUN rm -rf /usr/local/tomcat/webapps/*
-COPY --from=build /app/target/bbva-rest.war /usr/local/tomcat/webapps/ROOT.war
+COPY --from=build /app/target/ROOT.war /usr/local/tomcat/webapps/ROOT.war
 EXPOSE 8080
 CMD ["catalina.sh", "run"]

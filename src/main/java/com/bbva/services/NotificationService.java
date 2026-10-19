@@ -1,183 +1,114 @@
 package com.bbva.services;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.ThreadLocalRandom;
-
+import java.util.Locale;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+/** Simulador CEL exclusivamente para pruebas de integracion, sin movimientos monetarios. */
 @Path("services")
 public class NotificationService {
-
-    @POST
-    @Path("notification")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    public Response notificationProcessPost(
-            @HeaderParam("tsec") String tsecHeader,
-            @HeaderParam("ConsumerRequestID") String consumerRequestIdHeader,
-            NotificationDTO dto) {
-        return process(tsecHeader, consumerRequestIdHeader, dto);
-    }
+    private static final boolean DEMO = Boolean.parseBoolean(
+            System.getenv().getOrDefault("CEL_DEMO_MODE", "false"));
+    private static final ZoneId ZONE = ZoneId.of("America/Mexico_City");
 
     @PUT
     @Path("notification")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response notificationProcessPut(
-            @HeaderParam("tsec") String tsecHeader,
-            @HeaderParam("ConsumerRequestID") String consumerRequestIdHeader,
+            @HeaderParam("tsec") String tsec,
+            @HeaderParam("ConsumerRequestID") String requestId,
             NotificationDTO dto) {
-        return process(tsecHeader, consumerRequestIdHeader, dto);
-    }
-
-    private Response process(String tsecHeader, String consumerRequestIdHeader, NotificationDTO dto) {
-
+        if (!DEMO) {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity("Simulador deshabilitado: CEL_DEMO_MODE debe ser true solo en pruebas")
+                    .type(MediaType.TEXT_PLAIN).build();
+        }
         if (dto == null) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("El cuerpo JSON es obligatorio").build();
+                    .entity("JSON requerido").type(MediaType.TEXT_PLAIN).build();
         }
-
-        // 1. VALIDACIÓN MANDATORIOS AJUSTADA AL JSON RECIBIDO
-        if (isMissing(dto.getCanalor()) || isMissing(dto.getContror()) || isMissing(dto.getServior())
-                || isMissing(dto.getTipoper()) || isMissing(dto.getTrminal()) || isMissing(dto.getRferenc())
-                || isMissing(dto.getCnvenio()) || isMissing(dto.getMoneda())) {
-            
-            dto.setCodresp("96");
-            return buildResponse(tsecHeader, consumerRequestIdHeader, dto);
+        String tipo = trim(dto.getTipoper()).toUpperCase(Locale.ROOT);
+        String referencia = trim(dto.getRferenc()).toUpperCase(Locale.ROOT);
+        if (missing(dto.getCanalor()) || missing(dto.getContror()) ||
+                missing(dto.getServior()) || missing(dto.getCnvenio()) ||
+                missing(dto.getGuiacie()) || dto.getNummens() == null ||
+                missing(dto.getTimesta()) || missing(dto.getTrminal()) ||
+                missing(dto.getRferenc()) || missing(dto.getMoneda()) ||
+                missing(dto.getIded()) || missing(dto.getTrns())) {
+            dto.setCodresp("30"); // Formato incorrecto (Anexo B)
+            return ok(dto, tsec, requestId);
         }
-
-        // Asignación de valores por defecto para campos ausentes en el JSON
-        if (isMissing(dto.getGuiacie())) dto.setGuiacie("DEFAULT_GUIA");
-        if (dto.getNummens() == null) dto.setNummens(1L);
-        if (isMissing(dto.getTimesta())) dto.setTimesta(ZonedDateTime.now().toString());
-        if (isMissing(dto.getIded())) dto.setIded("DEFAULT_IDED");
-        if (isMissing(dto.getTrns())) dto.setTrns("DEFAULT_TRNS");
-
-        // Normalizar imptota si sólo se recibe imefect
-        if ((dto.getImptota() == null || dto.getImptota() == 0) && dto.getImefect() != null) {
-            dto.setImptota(dto.getImefect());
+        if (!("CON".equals(tipo) || "PAG".equals(tipo) ||
+                "COB".equals(tipo) || "REV".equals(tipo))) {
+            dto.setCodresp("30");
+            return ok(dto, tsec, requestId);
         }
-
-        // 2. SIMULACIÓN FORZADA (Si se envía codresp explícito diferente de 00)
-        if (dto.getCodresp() != null && !dto.getCodresp().trim().isEmpty()
-                && !"00".equals(dto.getCodresp().trim())) {
-            dto.setCodresp(dto.getCodresp().trim());
-            return buildResponse(tsecHeader, consumerRequestIdHeader, dto);
+        // Escenarios funcionales de prueba. No sustituye validaciones de negocio reales.
+        String rechazo = testCode(referencia);
+        if (rechazo != null) {
+            dto.setCodresp(rechazo);
+            return ok(dto, tsec, requestId);
         }
-
-        // 3. REGLAS DINÁMICAS POR VALOR EN 'rferenc'
-        String ref = dto.getRferenc().trim().toUpperCase(java.util.Locale.ROOT);
-
-        if (ref.endsWith("SUSP")) {
-            dto.setCodresp("03"); // Suspended Reference
-        } else if (ref.endsWith("CANC")) {
-            dto.setCodresp("04"); // Canceled Reference
-        } else if (ref.endsWith("REJ")) {
-            dto.setCodresp("05"); // Target Entity Rejection
-        } else if (ref.endsWith("LIMIT")) {
-            dto.setCodresp("07"); // Amount Exceeds Limit
-        } else if (ref.endsWith("INV")) {
-            dto.setCodresp("10"); // Invalid Reference Format
-        } else if (ref.endsWith("DUP")) {
-            dto.setCodresp("12"); // Duplicate Payment
-        } else if (ref.endsWith("UNREF")) {
-            dto.setCodresp("13"); // Uncataloged Reference
-        } else if (ref.endsWith("UNMER")) {
-            dto.setCodresp("14"); // Uncataloged Merchant
-        } else if (ref.endsWith("NOENT")) {
-            dto.setCodresp("15"); // Non-existent Target Entity
-        } else if (ref.endsWith("ANNUL")) {
-            dto.setCodresp("17"); // Cancellation
-        } else if (ref.endsWith("PROHIB")) {
-            dto.setCodresp("20"); // Prohibited Amount
-        } else if (ref.endsWith("TIMEOUT")) {
-            dto.setCodresp("68"); // Timeout
-        } else if (ref.endsWith("UNAVAIL")) {
-            dto.setCodresp("91"); // Entity Unavailable
+        dto.setCodresp("00");
+        ZonedDateTime now = ZonedDateTime.now(ZONE);
+        if ("CON".equals(tipo)) {
+            // Saldos deterministas SOLO para pruebas, nunca saldos reales.
+            dto.setImptota(650.91);
+            dto.setImminem(207.05);
+            dto.setImmaxem(1000.00);
+            dto.setFhvigem(now.plusDays(30).toLocalDate().toString());
         } else {
-            dto.setCodresp("00");
-        }
-
-        if (!"00".equals(dto.getCodresp())) {
-            return buildResponse(tsecHeader, consumerRequestIdHeader, dto);
-        }
-
-        // 4. LÓGICA EXITOSA (codresp = "00")
-        if ("CON".equals(dto.getTipoper())) {
-            if (dto.getFhvigem() == null || dto.getFhvigem().isEmpty()) {
-                LocalDate fechaVigencia = LocalDate.now().plusYears(1);
-                dto.setFhvigem(fechaVigencia.format(DateTimeFormatter.ISO_LOCAL_DATE));
+            // PAG/COB/REV: el importe proviene de BBVA; no modificarlo.
+            if (dto.getImptota() == null || dto.getImptota() <= 0.0) {
+                dto.setCodresp("30");
+                return ok(dto, tsec, requestId);
             }
-
-            if (dto.getImptota() == null || dto.getImptota() == 0) {
-                double imptota = ThreadLocalRandom.current().nextDouble(100.00, 5000.00);
-                dto.setImptota(Math.round(imptota * 100.0) / 100.0);
+            if ("PAG".equals(tipo) || "COB".equals(tipo)) {
+                dto.setFecpago(now.format(DateTimeFormatter.ofPattern("MMdd")));
+                dto.setHorpago(now.format(DateTimeFormatter.ofPattern("HHmmss")));
             }
-
-            if (dto.getImminem() == null || dto.getImminem() == 0) {
-                double imminem = dto.getImptota() * 0.10;
-                dto.setImminem(Math.round(imminem * 100.0) / 100.0);
+            if ("COB".equals(tipo)) {
+                // Folio determinista de prueba; no representa acreditacion real.
+                String tx = trim(dto.getTrns());
+                dto.setFlpagem("SIM" + (tx.length() > 9 ? tx.substring(tx.length() - 9) : tx));
             }
-
-            if (dto.getImmaxem() == null || dto.getImmaxem() == 0) {
-                dto.setImmaxem(dto.getImptota());
-            }
+            // REV: solo acuse simulado; no realiza reverso contable.
         }
-
-        if (("PAG".equals(dto.getTipoper()) || "COB".equals(dto.getTipoper()))
-                && (dto.getHorpago() == null || dto.getHorpago().isEmpty())) {
-
-            String horaActualCDMX = ZonedDateTime.now(ZoneId.of("America/Mexico_City"))
-                    .format(DateTimeFormatter.ofPattern("HHmmss"));
-            dto.setHorpago(horaActualCDMX);
-        }
-
-        return buildResponse(tsecHeader, consumerRequestIdHeader, dto);
+        return ok(dto, tsec, requestId);
     }
 
-    private boolean isMissing(String value) {
-        return value == null || value.trim().isEmpty();
+    private static String testCode(String ref) {
+        if (ref.endsWith("SUSP")) return "03";
+        if (ref.endsWith("CANC")) return "04";
+        if (ref.endsWith("REJ")) return "05";
+        if (ref.endsWith("LIMIT")) return "07";
+        if (ref.endsWith("INV")) return "10";
+        if (ref.endsWith("DUP")) return "12";
+        if (ref.endsWith("UNREF")) return "13";
+        if (ref.endsWith("UNMER")) return "14";
+        if (ref.endsWith("NOENT")) return "15";
+        if (ref.endsWith("ANNUL")) return "17";
+        if (ref.endsWith("PROHIB")) return "20";
+        if (ref.endsWith("UNAVAIL")) return "91";
+        return null;
     }
 
-    private Response buildResponse(String tsecHeader, String consumerRequestIdHeader, NotificationDTO dto) {
-        if (dto.getAutoriz() == null) dto.setAutoriz("");
-        if (dto.getCertiem() == null) dto.setCertiem("");
-        if (dto.getClcurem() == null) dto.setClcurem("");
-        if (dto.getCodfijo() == null) dto.setCodfijo("");
-        if (dto.getFeccap() == null) dto.setFeccap("");
-        if (dto.getFecpago() == null) dto.setFecpago("");
-        if (dto.getFilesp1() == null) dto.setFilesp1("");
-        if (dto.getFilesp2() == null) dto.setFilesp2("");
-        if (dto.getFillmas() == null) dto.setFillmas("");
-        if (dto.getFillnum() == null) dto.setFillnum("");
-        if (dto.getFlpagem() == null) dto.setFlpagem("");
-        if (dto.getTppagem() == null) dto.setTppagem("");
-        if (dto.getFhvigem() == null) dto.setFhvigem("");
-        if (dto.getHorpago() == null) dto.setHorpago("");
-        if (dto.getImmaxem() == null) dto.setImmaxem(0.0);
-        if (dto.getImminem() == null) dto.setImminem(0.0);
-        if (dto.getImptota() == null) dto.setImptota(0.0);
-        if (dto.getIdmsjpa() == null) dto.setIdmsjpa(0L);
-        if (dto.getNummens() == null) dto.setNummens(0L);
-
-        String responseTsec = (tsecHeader != null && !tsecHeader.trim().isEmpty()) ? tsecHeader : "";
-        String responseRequestId = (consumerRequestIdHeader != null && !consumerRequestIdHeader.trim().isEmpty())
-                ? consumerRequestIdHeader
-                : "";
-
-        return Response.ok(dto)
-                .header("tsec", responseTsec)
-                .header("ConsumerRequestID", responseRequestId)
+    private static String trim(String s) { return s == null ? "" : s.trim(); }
+    private static boolean missing(String s) { return trim(s).isEmpty(); }
+    private Response ok(NotificationDTO dto, String tsec, String requestId) {
+        return Response.ok(dto, MediaType.APPLICATION_JSON)
+                .header("tsec", tsec == null ? "" : tsec)
+                .header("ConsumerRequestID", requestId == null ? "" : requestId)
+                .header("X-CEL-Simulation", "true")
                 .build();
     }
 }

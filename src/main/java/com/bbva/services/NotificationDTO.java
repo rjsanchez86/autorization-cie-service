@@ -276,4 +276,59 @@ public class NotificationDTO {
     public void setAorigab(String aorigab) { this.aorigab = aorigab; }
     public String getReferab() { return referab; }
     public void setReferab(String referab) { this.referab = referab; }
+
+    /** Normaliza solo la salida JSON del simulador. No altera los valores de entrada antes de validarlos. */
+    public void normalizeForResponse() {
+        if (this.canalor == null) this.canalor = "";
+        if (this.contror == null) this.contror = "";
+        if (this.servior == null) this.servior = "";
+        if (this.tipoper == null) this.tipoper = "";
+        if (this.cnvenio == null) this.cnvenio = "";
+        if (this.comison == null) this.comison = 0.0;
+        if (this.iva == null) this.iva = 0.0;
+        if (this.bandera == null) this.bandera = "";
+        if (this.numetdc == null) this.numetdc = "";
+        if (this.tipprom == null) this.tipprom = "";
+        if (this.marcapr == null) this.marcapr = "";
+        if (this.tipotar == null) this.tipotar = "";
+        if (this.plazoma == null) this.plazoma = "";
+        if (this.rferenc == null) this.rferenc = "";
+        if (this.cncepto == null) this.cncepto = "";
+        if (this.imefect == null) this.imefect = 0.0;
+        if (this.imptota == null) this.imptota = 0.0;
+        if (this.ctacarg == null) this.ctacarg = "";
+        if (this.disponi == null) this.disponi = 0.0;
+        if (this.moneda == null) this.moneda = "";
+        if (this.trminal == null) this.trminal = "";
+        if (this.usuario == null) this.usuario = "";
+        if (this.folioca == null) this.folioca = "";
+        if (this.tiptras == null) this.tiptras = "";
+        if (this.dcocarg == null) this.dcocarg = "";
+        if (this.referca == null) this.referca = "";
+        if (this.aorigab == null) this.aorigab = "";
+        if (this.referab == null) this.referab = "";
+        if (this.guiacie == null) this.guiacie = "";
+        if (this.nummens == null) this.nummens = 0L;
+        if (this.idmsjpa == null) this.idmsjpa = 0L;
+        if (this.timesta == null) this.timesta = "";
+        if (this.fillmas == null) this.fillmas = "";
+        if (this.filesp2 == null) this.filesp2 = "";
+        if (this.fillnum == null) this.fillnum = "";
+        if (this.filesp1 == null) this.filesp1 = "";
+        if (this.ided == null) this.ided = "";
+        if (this.autoriz == null) this.autoriz = "";
+        if (this.codresp == null) this.codresp = "";
+        if (this.trns == null) this.trns = "";
+        if (this.fecpago == null) this.fecpago = "";
+        if (this.horpago == null) this.horpago = "";
+        if (this.codfijo == null) this.codfijo = "";
+        if (this.feccap == null) this.feccap = "";
+        if (this.flpagem == null) this.flpagem = "";
+        if (this.tppagem == null) this.tppagem = "";
+        if (this.clcurem == null) this.clcurem = "";
+        if (this.imminem == null) this.imminem = 0.0;
+        if (this.immaxem == null) this.immaxem = 0.0;
+        if (this.fhvigem == null) this.fhvigem = "";
+        if (this.certiem == null) this.certiem = "";
+    }
 }

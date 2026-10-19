@@ -15,8 +15,6 @@ import javax.ws.rs.core.Response;
 /** Simulador CEL exclusivamente para pruebas de integracion, sin movimientos monetarios. */
 @Path("services")
 public class NotificationService {
-    private static final boolean DEMO = Boolean.parseBoolean(
-            System.getenv().getOrDefault("CEL_DEMO_MODE", "false"));
     private static final ZoneId ZONE = ZoneId.of("America/Mexico_City");
 
     @PUT
@@ -27,11 +25,6 @@ public class NotificationService {
             @HeaderParam("tsec") String tsec,
             @HeaderParam("ConsumerRequestID") String requestId,
             NotificationDTO dto) {
-        if (!DEMO) {
-            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                    .entity("Simulador deshabilitado: CEL_DEMO_MODE debe ser true solo en pruebas")
-                    .type(MediaType.TEXT_PLAIN).build();
-        }
         if (dto == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("JSON requerido").type(MediaType.TEXT_PLAIN).build();
@@ -105,6 +98,7 @@ public class NotificationService {
     private static String trim(String s) { return s == null ? "" : s.trim(); }
     private static boolean missing(String s) { return trim(s).isEmpty(); }
     private Response ok(NotificationDTO dto, String tsec, String requestId) {
+        dto.normalizeForResponse();
         return Response.ok(dto, MediaType.APPLICATION_JSON)
                 .header("tsec", tsec == null ? "" : tsec)
                 .header("ConsumerRequestID", requestId == null ? "" : requestId)

@@ -1,163 +1,165 @@
 package com.bbva.services;
 
 import javax.xml.bind.annotation.XmlRootElement;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 @XmlRootElement
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class NotificationDTO {
 
-    @JsonProperty("CANALOR")
+    @JsonProperty("canalor")
     private String canalor;
 
-    @JsonProperty("CONTROR")
+    @JsonProperty("contror")
     private String contror;
 
-    @JsonProperty("SERVIOR")
+    @JsonProperty("servior")
     private String servior;
 
-    @JsonProperty("TIPOPER")
+    @JsonProperty("tipoper")
     private String tipoper;
 
-    @JsonProperty("NUMCONV")
+    @JsonProperty("cnvenio")
     private String cnvenio;
 
-    @JsonProperty("COMISON")
+    @JsonProperty("comison")
     private Double comison;
 
-    @JsonProperty("IVA")
+    @JsonProperty("iva")
     private Double iva;
 
-    @JsonProperty("BANDERA")
+    @JsonProperty("bandera")
     private String bandera;
 
-    @JsonProperty("NUMETDC")
+    @JsonProperty("numetdc")
     private String numetdc;
 
-    @JsonProperty("TIPPROM")
+    @JsonProperty("tipprom")
     private String tipprom;
 
-    @JsonProperty("MARCAPR")
+    @JsonProperty("marcapr")
     private String marcapr;
 
-    @JsonProperty("TIPOTAR")
+    @JsonProperty("tipotar")
     private String tipotar;
 
-    @JsonProperty("PLAZOMA")
+    @JsonProperty("plazoma")
     private String plazoma;
 
-    @JsonProperty("REFEREN")
+    @JsonProperty("rferenc")
     private String rferenc;
 
-    @JsonProperty("CONCEPT")
+    @JsonProperty("cncepto")
     private String cncepto;
 
-    @JsonProperty("IMEFECT")
+    @JsonProperty("imefect")
     private Double imefect;
 
-    @JsonProperty("IMTOTAL")
+    @JsonProperty("imptota")
     private Double imptota;
 
-    @JsonProperty("CTACARG")
+    @JsonProperty("ctacarg")
     private String ctacarg;
 
-    @JsonProperty("DISPONI")
+    @JsonProperty("disponi")
     private Double disponi;
 
-    @JsonProperty("DIVISA")
+    @JsonProperty("moneda")
     private String moneda;
 
-    @JsonProperty("TERMINA")
+    @JsonProperty("trminal")
     private String trminal;
 
-    @JsonProperty("USUARIO")
+    @JsonProperty("usuario")
     private String usuario;
 
-    @JsonProperty("FOLIOCA")
+    @JsonProperty("folioca")
     private String folioca;
 
-    @JsonProperty("TIPTRAS")
+    @JsonProperty("tiptras")
     private String tiptras;
 
-    @JsonProperty("DCOCARG")
+    @JsonProperty("dcocarg")
     private String dcocarg;
 
-    @JsonProperty("REFERCA")
+    @JsonProperty("referca")
     private String referca;
 
-    @JsonProperty("AORIGAB")
+    @JsonProperty("aorigab")
     private String aorigab;
 
-    @JsonProperty("REFERAB")
+    @JsonProperty("referab")
     private String referab;
 
     // Campos adicionales para trazabilidad y respuesta del servicio
-    @JsonProperty("GUIACIE")
+    @JsonProperty("guiacie")
     private String guiacie;
 
-    @JsonProperty("NUMMENS")
+    @JsonProperty("nummens")
     private Long nummens;
 
-    @JsonProperty("IDMSJPA")
+    @JsonProperty("idmsjpa")
     private Long idmsjpa;
 
-    @JsonProperty("TIMESTA")
+    @JsonProperty("timesta")
     private String timesta;
 
-    @JsonProperty("FILLMAS")
+    @JsonProperty("fillmas")
     private String fillmas;
 
-    @JsonProperty("FILESP2")
+    @JsonProperty("filesp2")
     private String filesp2;
 
-    @JsonProperty("FILLNUM")
+    @JsonProperty("fillnum")
     private String fillnum;
 
-    @JsonProperty("FILESP1")
+    @JsonProperty("filesp1")
     private String filesp1;
 
-    @JsonProperty("IDED")
+    @JsonProperty("ided")
     private String ided;
 
-    @JsonProperty("AUTORIZ")
+    @JsonProperty("autoriz")
     private String autoriz;
 
-    @JsonProperty("CODRESP")
+    @JsonProperty("codresp")
     private String codresp;
 
-    @JsonProperty("TRNS")
+    @JsonProperty("trns")
     private String trns;
 
-    @JsonProperty("FECPAGO")
+    @JsonProperty("fecpago")
     private String fecpago;
 
-    @JsonProperty("HORPAGO")
+    @JsonProperty("horpago")
     private String horpago;
 
-    @JsonProperty("CODFIJO")
+    @JsonProperty("codfijo")
     private String codfijo;
 
-    @JsonProperty("FECCAP")
+    @JsonProperty("feccap")
     private String feccap;
 
-    @JsonProperty("FLPAGEM")
+    @JsonProperty("flpagem")
     private String flpagem;
 
-    @JsonProperty("TPPAGEM")
+    @JsonProperty("tppagem")
     private String tppagem;
 
-    @JsonProperty("CLCUREM")
+    @JsonProperty("clcurem")
     private String clcurem;
 
-    @JsonProperty("IMMINEM")
+    @JsonProperty("imminem")
     private Double imminem;
 
-    @JsonProperty("IMMAXEM")
+    @JsonProperty("immaxem")
     private Double immaxem;
 
-    @JsonProperty("FHVIGEM")
+    @JsonProperty("fhvigem")
     private String fhvigem;
 
-    @JsonProperty("CERTIEM")
+    @JsonProperty("certiem")
     private String certiem;
 
     public NotificationDTO() {}

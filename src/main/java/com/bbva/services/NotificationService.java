@@ -4,8 +4,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.ws.rs.Consumes;
@@ -19,31 +17,6 @@ import javax.ws.rs.core.Response;
 
 @Path("services")
 public class NotificationService {
-
-    // Clase auxiliar para definir los datos específicos por convenio
-    private static class ConvenioConfig {
-        String concepto;
-        Double importeTotal;
-        Double importeMinimo;
-        Double importeMaximo;
-        String codFijo;
-
-        public ConvenioConfig(Double importeTotal, Double importeMinimo, Double importeMaximo) {
-            this.importeTotal = importeTotal;
-            this.importeMinimo = importeMinimo;
-            this.importeMaximo = importeMaximo;
-        }
-    }
-
-    // Catálogo configurable de convenios
-    private static final Map<String, ConvenioConfig> CATALOGO_CONVENIOS = new HashMap<>();
-
-    static {
-        // Ejemplos: Agrega aquí tus números de convenio con sus valores correspondientes
-        CATALOGO_CONVENIOS.put("002572265", new ConvenioConfig(2500.00, 1000.00, 2500.00));
-        CATALOGO_CONVENIOS.put("002572273", new ConvenioConfig(450.50, 450.50, 450.50));
-        CATALOGO_CONVENIOS.put("002572281", new ConvenioConfig(1200.00, 500.00, 1500.00));
-    }
 
     @POST
     @Path("notification")
@@ -69,11 +42,16 @@ public class NotificationService {
 
     private Response process(String tsecHeader, String consumerRequestIdHeader, NotificationDTO dto) {
 
+        if (dto == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("El cuerpo JSON es obligatorio").build();
+        }
+
         // 1. VALIDACIÓN MANDATORIOS AJUSTADA AL JSON RECIBIDO
         if (isMissing(dto.getCanalor()) || isMissing(dto.getContror()) || isMissing(dto.getServior())
                 || isMissing(dto.getTipoper()) || isMissing(dto.getTrminal()) || isMissing(dto.getRferenc())
                 || isMissing(dto.getCnvenio()) || isMissing(dto.getMoneda())) {
-
+            
             dto.setCodresp("96");
             return buildResponse(tsecHeader, consumerRequestIdHeader, dto);
         }
@@ -91,12 +69,14 @@ public class NotificationService {
         }
 
         // 2. SIMULACIÓN FORZADA (Si se envía codresp explícito diferente de 00)
-        if (dto.getCodresp() != null && !dto.getCodresp().isEmpty() && !"00".equals(dto.getCodresp())) {
+        if (dto.getCodresp() != null && !dto.getCodresp().trim().isEmpty()
+                && !"00".equals(dto.getCodresp().trim())) {
+            dto.setCodresp(dto.getCodresp().trim());
             return buildResponse(tsecHeader, consumerRequestIdHeader, dto);
         }
 
         // 3. REGLAS DINÁMICAS POR VALOR EN 'rferenc'
-        String ref = dto.getRferenc().toUpperCase();
+        String ref = dto.getRferenc().trim().toUpperCase(java.util.Locale.ROOT);
 
         if (ref.endsWith("SUSP")) {
             dto.setCodresp("03"); // Suspended Reference
@@ -139,41 +119,18 @@ public class NotificationService {
                 dto.setFhvigem(fechaVigencia.format(DateTimeFormatter.ISO_LOCAL_DATE));
             }
 
-            // Aplicación de datos específicos según el convenio recibido
-            String convenio = dto.getCnvenio() != null ? dto.getCnvenio().trim() : "";
-            if (CATALOGO_CONVENIOS.containsKey(convenio)) {
-                ConvenioConfig config = CATALOGO_CONVENIOS.get(convenio);
+            if (dto.getImptota() == null || dto.getImptota() == 0) {
+                double imptota = ThreadLocalRandom.current().nextDouble(100.00, 5000.00);
+                dto.setImptota(Math.round(imptota * 100.0) / 100.0);
+            }
 
-                if (config.concepto != null) {
-                    dto.setCncepto(config.concepto);
-                }
-                if (config.codFijo != null) {
-                    dto.setCodfijo(config.codFijo);
-                }
-                if (config.importeTotal != null) {
-                    dto.setImptota(config.importeTotal);
-                }
-                if (config.importeMinimo != null) {
-                    dto.setImminem(config.importeMinimo);
-                }
-                if (config.importeMaximo != null) {
-                    dto.setImmaxem(config.importeMaximo);
-                }
-            } else {
-                // Comportamiento genérico/por defecto si el convenio no está en el catálogo
-                if (dto.getImptota() == null || dto.getImptota() == 0) {
-                    double imptota = ThreadLocalRandom.current().nextDouble(100.00, 5000.00);
-                    dto.setImptota(Math.round(imptota * 100.0) / 100.0);
-                }
+            if (dto.getImminem() == null || dto.getImminem() == 0) {
+                double imminem = dto.getImptota() * 0.10;
+                dto.setImminem(Math.round(imminem * 100.0) / 100.0);
+            }
 
-                if (dto.getImminem() == null || dto.getImminem() == 0) {
-                    double imminem = dto.getImptota() * 0.10;
-                    dto.setImminem(Math.round(imminem * 100.0) / 100.0);
-                }
-
-                if (dto.getImmaxem() == null || dto.getImmaxem() == 0) {
-                    dto.setImmaxem(dto.getImptota());
-                }
+            if (dto.getImmaxem() == null || dto.getImmaxem() == 0) {
+                dto.setImmaxem(dto.getImptota());
             }
         }
 
@@ -189,7 +146,7 @@ public class NotificationService {
     }
 
     private boolean isMissing(String value) {
-        return value == "" || value.trim().isEmpty();
+        return value == null || value.trim().isEmpty();
     }
 
     private Response buildResponse(String tsecHeader, String consumerRequestIdHeader, NotificationDTO dto) {

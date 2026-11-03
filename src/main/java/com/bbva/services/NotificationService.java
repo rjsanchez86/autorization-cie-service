@@ -25,6 +25,28 @@ public class NotificationService {
             @HeaderParam("tsec") String tsec,
             @HeaderParam("ConsumerRequestID") String requestId,
             NotificationDTO dto) {
+        long start = System.nanoTime();
+        java.time.Instant entry = java.time.Instant.now();
+        String input = SheetAudit.toJson(dto); // Snapshot antes de cualquier mutacion
+        Response response;
+        try {
+            response = processNotification(tsec, requestId, dto);
+        } catch (RuntimeException ex) {
+            SheetAudit.send(entry, java.time.Instant.now(), start, requestId, input,
+                    "{\"error\":\"Error interno\"}", 500);
+            throw ex;
+        }
+        Object entity = response.getEntity();
+        String output = entity instanceof String ? (String) entity : SheetAudit.toJson(entity);
+        SheetAudit.send(entry, java.time.Instant.now(), start, requestId, input,
+                output, response.getStatus());
+        return response;
+    }
+
+    private Response processNotification(
+            @HeaderParam("tsec") String tsec,
+            @HeaderParam("ConsumerRequestID") String requestId,
+            NotificationDTO dto) {
         if (dto == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("JSON requerido").type(MediaType.TEXT_PLAIN).build();

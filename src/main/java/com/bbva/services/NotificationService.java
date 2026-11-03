@@ -17,6 +17,9 @@ import javax.ws.rs.core.Response;
 public class NotificationService {
     private static final ZoneId ZONE = ZoneId.of("America/Mexico_City");
 
+    private static final org.codehaus.jackson.map.ObjectMapper INPUT_JSON =
+            new org.codehaus.jackson.map.ObjectMapper();
+
     @PUT
     @Path("notification")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -24,23 +27,39 @@ public class NotificationService {
     public Response notificationProcessPut(
             @HeaderParam("tsec") String tsec,
             @HeaderParam("ConsumerRequestID") String requestId,
-            NotificationDTO dto) {
+            String jsonEntrada) {
         long start = System.nanoTime();
         java.time.Instant entry = java.time.Instant.now();
-        String input = SheetAudit.toJson(dto); // Snapshot antes de cualquier mutacion
+        String input = jsonEntrada == null ? "" : jsonEntrada;
         Response response;
         try {
-            response = processNotification(tsec, requestId, dto);
+            if (input.trim().isEmpty()) {
+                response = Response.status(Response.Status.BAD_REQUEST)
+                        .entity("JSON requerido").type(MediaType.TEXT_PLAIN).build();
+            } else {
+                NotificationDTO dto;
+                try {
+                    dto = INPUT_JSON.readValue(input, NotificationDTO.class);
+                } catch (java.io.IOException invalid) {
+                    response = Response.status(Response.Status.BAD_REQUEST)
+                            .entity("{\"error\":\"JSON invalido\"}")
+                            .type(MediaType.APPLICATION_JSON).build();
+                    SheetAudit.send(entry, java.time.Instant.now(), start, requestId,
+                            input, (String) response.getEntity(), response.getStatus());
+                    return response;
+                }
+                response = processNotification(tsec, requestId, dto);
+            }
+            Object entity = response.getEntity();
+            String output = entity instanceof String ? (String) entity : SheetAudit.toJson(entity);
+            SheetAudit.send(entry, java.time.Instant.now(), start, requestId,
+                    input, output, response.getStatus());
+            return response;
         } catch (RuntimeException ex) {
-            SheetAudit.send(entry, java.time.Instant.now(), start, requestId, input,
-                    "{\"error\":\"Error interno\"}", 500);
+            SheetAudit.send(entry, java.time.Instant.now(), start, requestId,
+                    input, "{\"error\":\"Error interno\"}", 500);
             throw ex;
         }
-        Object entity = response.getEntity();
-        String output = entity instanceof String ? (String) entity : SheetAudit.toJson(entity);
-        SheetAudit.send(entry, java.time.Instant.now(), start, requestId, input,
-                output, response.getStatus());
-        return response;
     }
 
     private Response processNotification(

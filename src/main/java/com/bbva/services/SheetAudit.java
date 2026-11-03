@@ -119,10 +119,17 @@ public final class SheetAudit {
                 Map.Entry<String, JsonNode> field = fields.next();
                 String name = field.getKey().toLowerCase(java.util.Locale.ROOT);
                 JsonNode child = field.getValue();
-                if (name.matches("tsec|password|passwd|token|authorization|secret|api[_-]?key|cookie|set-cookie")) {
-                    object.put(field.getKey(), "[REDACTED]");
-                } else if (name.matches("contror|numetdc|ctacarg|dcocarg|aorigab|usuario|iban|cardnumber|pan")) {
-                    // Por defecto se oculta completamente: no persistir cuentas ni tarjetas.
+                if (name.matches("tsec|password|passwd|token|authorization|secret|api[_-]?key|cookie|set-cookie")
+                        || name.matches("contror|numetdc|ctacarg|dcocarg|aorigab|usuario|iban|cardnumber|pan")) {
+                    // No inventar un valor sensible cuando el dato original esta vacio.
+                    // Mantener null como null y cadena vacia como cadena vacia.
+                    if (child == null || child.isNull()) {
+                        continue;
+                    }
+                    if (child.isTextual() && child.asText().isEmpty()) {
+                        continue;
+                    }
+                    // Nunca almacenar credenciales ni identificadores completos.
                     object.put(field.getKey(), "[REDACTED]");
                 } else {
                     maskTree(child);

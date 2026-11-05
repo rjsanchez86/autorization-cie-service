@@ -27,6 +27,7 @@ public class NotificationService {
     public Response notificationProcessPut(
             @HeaderParam("tsec") String tsec,
             @HeaderParam("ConsumerRequestID") String requestId,
+            @HeaderParam("x-rho-traceid") String rhoTraceId,
             String jsonEntrada) {
         long start = System.nanoTime();
         java.time.Instant entry = java.time.Instant.now();
@@ -44,7 +45,7 @@ public class NotificationService {
                     response = Response.status(Response.Status.BAD_REQUEST)
                             .entity("{\"error\":\"JSON invalido\"}")
                             .type(MediaType.APPLICATION_JSON).build();
-                    SheetAudit.send(entry, java.time.Instant.now(), start, requestId,
+                    SheetAudit.send(entry, java.time.Instant.now(), start, requestId, rhoTraceId,
                             input, (String) response.getEntity(), response.getStatus());
                     return response;
                 }
@@ -52,11 +53,11 @@ public class NotificationService {
             }
             Object entity = response.getEntity();
             String output = entity instanceof String ? (String) entity : SheetAudit.toJson(entity);
-            SheetAudit.send(entry, java.time.Instant.now(), start, requestId,
+            SheetAudit.send(entry, java.time.Instant.now(), start, requestId, rhoTraceId,
                     input, output, response.getStatus());
             return response;
         } catch (RuntimeException ex) {
-            SheetAudit.send(entry, java.time.Instant.now(), start, requestId,
+            SheetAudit.send(entry, java.time.Instant.now(), start, requestId, rhoTraceId,
                     input, "{\"error\":\"Error interno\"}", 500);
             throw ex;
         }

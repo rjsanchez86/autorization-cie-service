@@ -29,7 +29,7 @@ public final class SheetAudit {
         try { return JSON.writeValueAsString(obj); }
         catch (Exception e) { return "null"; }
     }
-    public static void send(Instant entry, Instant exit, long start, String requestId,
+    public static void send(Instant entry, Instant exit, long start, String requestId, String rhoTraceId,
                             String input, String output, int status) {
         String url = System.getenv("CIE_AUDIT_URL");
         String secret = System.getenv("CIE_AUDIT_SECRET");
@@ -51,6 +51,7 @@ public final class SheetAudit {
                 event.put("entrada", entry.toString());
                 event.put("salida", exit.toString());
                 event.put("requestId", requestId);
+                event.put("rhoTraceId", rhoTraceId == null ? "" : rhoTraceId.trim());
                 // JSON embebido como texto, no como objeto de Apps Script
                 event.put("jsonEntrada", redact(input));
                 event.put("jsonSalida", redact(output));
@@ -64,7 +65,6 @@ public final class SheetAudit {
                 con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
                 try (OutputStream os = con.getOutputStream()) { os.write(data); }
                 int code = con.getResponseCode();
-                System.out.println("[CIE-AUDIT] HTTP inicial Apps Script: " + code);
                 // Apps Script ContentService suele responder con redireccion 302.
                 // La redireccion se consulta con GET; nunca reenviar el secreto en la URL.
                 if (code == 302 || code == 303) {
@@ -80,7 +80,6 @@ public final class SheetAudit {
                     con.setReadTimeout(3000);
                     code = con.getResponseCode();
                 }
-                System.out.println("[CIE-AUDIT] HTTP final Apps Script: " + code);
                 if (code < 200 || code >= 300) {
                     System.err.println("CIE audit HTTP " + code);
                 } else {

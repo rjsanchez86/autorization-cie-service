@@ -51,8 +51,8 @@ public final class SheetAudit {
                 event.put("secret", secret);
                 event.put("entrada", entry.toString());
                 event.put("salida", exit.toString());
-                event.put("requestId", requestId);
-                event.put("rhoTraceId", rhoTraceId == null ? "" : rhoTraceId.trim());
+                event.put("requestId", rhoTraceId == null ? "" : rhoTraceId.trim());
+                event.put("rhoTraceId", rhoTraceId == null ? "" : rhoTraceId.trim());       
                 // JSON embebido como texto, no como objeto de Apps Script
                 event.put("jsonEntrada", redact(input));
                 event.put("jsonSalida", redact(output));

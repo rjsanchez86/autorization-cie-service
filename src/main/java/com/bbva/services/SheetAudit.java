@@ -33,7 +33,15 @@ public final class SheetAudit {
                             String input, String output, int status) {
         String url = System.getenv("CIE_AUDIT_URL");
         String secret = System.getenv("CIE_AUDIT_SECRET");
-        if (url == null || url.isEmpty() || secret == null || secret.isEmpty()) return;
+        if (url == null || url.trim().isEmpty()) {
+            System.err.println("[CIE-AUDIT] ERROR: CIE_AUDIT_URL no configurada");
+            return;
+        }
+        if (secret == null || secret.trim().isEmpty()) {
+            System.err.println("[CIE-AUDIT] ERROR: CIE_AUDIT_SECRET no configurada");
+            return;
+        }
+        System.out.println("[CIE-AUDIT] Configuracion de auditoria detectada");
         final long elapsed = (System.nanoTime() - start) / 1000000L;
         EXEC.execute(() -> {
             HttpURLConnection con = null;
@@ -120,7 +128,7 @@ public final class SheetAudit {
                 String name = field.getKey().toLowerCase(java.util.Locale.ROOT);
                 JsonNode child = field.getValue();
                 if (name.matches("tsec|password|passwd|token|authorization|secret|api[_-]?key|cookie|set-cookie")
-                        || name.matches("contror|numetdc|ctacarg|dcocarg|aorigab|usuario|iban|cardnumber|pan")) {
+                        || name.matches("numetdc|ctacarg|dcocarg|aorigab|usuario|iban|cardnumber|pan")) {
                     // No inventar un valor sensible cuando el dato original esta vacio.
                     // Mantener null como null y cadena vacia como cadena vacia.
                     if (child == null || child.isNull()) {

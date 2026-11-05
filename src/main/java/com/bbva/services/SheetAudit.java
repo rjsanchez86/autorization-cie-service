@@ -47,6 +47,7 @@ public final class SheetAudit {
             HttpURLConnection con = null;
             try {
                 java.util.Map<String,Object> event = new java.util.LinkedHashMap<>();
+                System.out.println("[CIE-AUDIT] Enviando rhoTraceId " + rhoTraceId + " requestId " + requestId + " status " + status);
                 event.put("secret", secret);
                 event.put("entrada", entry.toString());
                 event.put("salida", exit.toString());

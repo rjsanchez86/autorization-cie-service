@@ -64,6 +64,7 @@ public final class SheetAudit {
                 con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
                 try (OutputStream os = con.getOutputStream()) { os.write(data); }
                 int code = con.getResponseCode();
+                System.out.println("[CIE-AUDIT] HTTP inicial Apps Script: " + code);
                 // Apps Script ContentService suele responder con redireccion 302.
                 // La redireccion se consulta con GET; nunca reenviar el secreto en la URL.
                 if (code == 302 || code == 303) {
@@ -79,6 +80,7 @@ public final class SheetAudit {
                     con.setReadTimeout(3000);
                     code = con.getResponseCode();
                 }
+                System.out.println("[CIE-AUDIT] HTTP final Apps Script: " + code);
                 if (code < 200 || code >= 300) {
                     System.err.println("CIE audit HTTP " + code);
                 } else {

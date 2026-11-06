@@ -33,6 +33,9 @@ public final class SheetAudit {
                             String input, String output, int status) {
         String url = System.getenv("CIE_AUDIT_URL");
         String secret = System.getenv("CIE_AUDIT_SECRET");
+        String deployment = System.getenv("CIE_DEPLOY_ENV");
+        final String origenDespliegue = deployment == null || deployment.trim().isEmpty()
+                ? "DESCONOCIDO" : deployment.trim();
         if (url == null || url.trim().isEmpty()) {
             System.err.println("[CIE-AUDIT] ERROR: CIE_AUDIT_URL no configurada");
             return;
@@ -58,6 +61,7 @@ public final class SheetAudit {
                 event.put("jsonSalida", redact(output));
                 event.put("duracionMs", elapsed);
                 event.put("httpStatus", status);
+                event.put("origenDespliegue", origenDespliegue);
                 byte[] data = JSON.writeValueAsBytes(event);
                 con = (HttpURLConnection) new URL(url).openConnection();
                 con.setInstanceFollowRedirects(false);

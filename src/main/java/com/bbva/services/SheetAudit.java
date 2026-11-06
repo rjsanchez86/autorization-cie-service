@@ -36,6 +36,7 @@ public final class SheetAudit {
         String deployment = System.getenv("CIE_DEPLOY_ENV");
         final String origenDespliegue = deployment == null || deployment.trim().isEmpty()
                 ? "DESCONOCIDO" : deployment.trim();
+        System.out.println("[CIE-AUDIT] Origen de despliegue: " + origenDespliegue);
         if (url == null || url.trim().isEmpty()) {
             System.err.println("[CIE-AUDIT] ERROR: CIE_AUDIT_URL no configurada");
             return;

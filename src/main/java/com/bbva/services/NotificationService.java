@@ -36,7 +36,6 @@ public class NotificationService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response notificationProcessPut(
             @HeaderParam("tsec") String tsec,
-            @HeaderParam("ConsumerRequestID") String requestId,
             @HeaderParam("x-rho-traceid") String rhoTraceId,
             String jsonEntrada) {
         long start = System.nanoTime();
@@ -52,29 +51,29 @@ public class NotificationService {
                     dto = INPUT_JSON.readValue(input, NotificationDTO.class);
                 } catch (java.io.IOException invalid) {
                     response = error(400, "JSON invalido");
-                    audit(entry, start, requestId, rhoTraceId, input, response);
+                    audit(entry, start, rhoTraceId, input, response);
                     return response;
                 }
-                response = processNotification(tsec, requestId, dto);
+                response = processNotification(tsec, dto);
             }
-            audit(entry, start, requestId, rhoTraceId, input, response);
+            audit(entry, start, rhoTraceId, input, response);
             return response;
         } catch (RuntimeException ex) {
-            SheetAudit.send(entry, Instant.now(), start, requestId, rhoTraceId,
+            SheetAudit.send(entry, Instant.now(), start, rhoTraceId,
                     input, "{\"error\":\"Error interno\"}", 500);
             throw ex;
         }
     }
 
-    private static void audit(Instant entry, long start, String requestId,
-                              String rhoTraceId, String input, Response response) {
+    private static void audit(Instant entry, long start, String rhoTraceId,
+                              String input, Response response) {
         Object entity = response.getEntity();
         String output = entity instanceof String ? (String) entity : SheetAudit.toJson(entity);
-        SheetAudit.send(entry, Instant.now(), start, requestId, rhoTraceId,
+        SheetAudit.send(entry, Instant.now(), start, rhoTraceId,
                 input, output, response.getStatus());
     }
 
-    private Response processNotification(String tsec, String requestId, NotificationDTO dto) {
+    private Response processNotification(String tsec, NotificationDTO dto) {
         if (dto == null) return error(400, "JSON requerido");
         String tipo = trim(dto.getTipoper()).toUpperCase(Locale.ROOT);
         if (missing(dto.getCanalor()) || missing(dto.getContror()) ||
@@ -86,13 +85,13 @@ public class NotificationService {
                 !("CON".equals(tipo) || "PAG".equals(tipo) ||
                   "COB".equals(tipo) || "REV".equals(tipo))) {
             dto.setCodresp("30");
-            return ok(dto, tsec, requestId);
+            return ok(dto, tsec);
         }
         // Se valida el importe antes de activar un escenario de prueba.
         if (!"CON".equals(tipo) && (dto.getImptota() == null ||
                 !Double.isFinite(dto.getImptota()) || dto.getImptota() <= 0.0)) {
             dto.setCodresp("30");
-            return ok(dto, tsec, requestId);
+            return ok(dto, tsec);
         }
 
         // Exclusivo para despliegues aislados de simulacion: cncepto activa el escenario.
@@ -113,7 +112,7 @@ public class NotificationService {
         }
         if (codigo != null) {
             dto.setCodresp(codigo);
-            return ok(dto, tsec, requestId);
+            return ok(dto, tsec);
         }
 
         dto.setCodresp("00");
@@ -131,7 +130,7 @@ public class NotificationService {
             if (missing(dto.getFlpagem())) dto.setFlpagem(generateTestFolio());
         }
         // COB y REV son acuses simulados: no inventan nuevos folios ni fechas.
-        return ok(dto, tsec, requestId);
+        return ok(dto, tsec);
     }
 
     private static String codeForConcept(String concept) {
@@ -187,11 +186,10 @@ public class NotificationService {
                 .type(MediaType.APPLICATION_JSON).build();
     }
 
-    private Response ok(NotificationDTO dto, String tsec, String requestId) {
+    private Response ok(NotificationDTO dto, String tsec) {
         dto.normalizeForResponse();
         return Response.ok(dto, MediaType.APPLICATION_JSON)
                 .header("tsec", tsec == null ? "" : tsec)
-                .header("ConsumerRequestID", requestId == null ? "" : requestId)
                 .header("X-CEL-Simulation", "true")
                 .build();
     }

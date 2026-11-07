@@ -12,24 +12,28 @@ import org.codehaus.jackson.node.ArrayNode;
 import java.util.Iterator;
 import java.util.Map;
 import java.time.Instant;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.RejectedExecutionException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
 /** Auditoria best-effort: nunca interrumpe el servicio de negocio. */
 public final class SheetAudit {
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final ExecutorService EXEC = Executors.newSingleThreadExecutor(r -> {
+    // Cola limitada para evitar crecimiento de memoria ante fallas de Apps Script.
+    private static final ThreadPoolExecutor EXEC = new ThreadPoolExecutor(
+            1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(500), r -> {
         Thread t = new Thread(r, "cie-sheet-audit"); t.setDaemon(true); return t;
-    });
+    }, new ThreadPoolExecutor.AbortPolicy());
     static { JSON.configure(SerializationConfig.Feature.FAIL_ON_EMPTY_BEANS, false); }
     private SheetAudit() { }
     public static String toJson(Object obj) {
         try { return JSON.writeValueAsString(obj); }
         catch (Exception e) { return "null"; }
     }
-    public static void send(Instant entry, Instant exit, long start, String requestId, String rhoTraceId,
+    public static void send(Instant entry, Instant exit, long start, String rhoTraceId,
                             String input, String output, int status) {
         String url = System.getenv("CIE_AUDIT_URL");
         String secret = System.getenv("CIE_AUDIT_SECRET");
@@ -47,15 +51,14 @@ public final class SheetAudit {
         }
         System.out.println("[CIE-AUDIT] Configuracion de auditoria detectada");
         final long elapsed = (System.nanoTime() - start) / 1000000L;
-        EXEC.execute(() -> {
+        try { EXEC.execute(() -> {
             HttpURLConnection con = null;
             try {
                 java.util.Map<String,Object> event = new java.util.LinkedHashMap<>();
-                System.out.println("[CIE-AUDIT] Enviando rhoTraceId " + rhoTraceId + " requestId " + requestId + " status " + status);
+                System.out.println("[CIE-AUDIT] Enviando rhoTraceId " + rhoTraceId + " status " + status);
                 event.put("secret", secret);
                 event.put("entrada", entry.toString());
                 event.put("salida", exit.toString());
-                event.put("requestId", rhoTraceId == null ? "" : rhoTraceId.trim());
                 event.put("rhoTraceId", rhoTraceId == null ? "" : rhoTraceId.trim());       
                 // JSON embebido como texto, no como objeto de Apps Script
                 event.put("jsonEntrada", redact(input));
@@ -90,14 +93,26 @@ public final class SheetAudit {
                     System.err.println("CIE audit HTTP " + code);
                 } else {
                     String body = readBody(con);
-                    if (!body.contains("\"status\":\"OK\"")) {
-                        System.err.println("CIE audit: respuesta no confirmada por Apps Script");
+                    try {
+                        JsonNode confirmation = JSON.readTree(body);
+                        if (confirmation == null || !"OK".equals(confirmation.path("status").asText())) {
+                            System.err.println("[CIE-AUDIT] Apps Script no confirmó registro; status="
+                                    + (confirmation == null ? "VACIO" : confirmation.path("status").asText()));
+                        } else {
+                            System.out.println("[CIE-AUDIT] Registro confirmado; plataforma=" + origenDespliegue);
+                        }
+                    } catch (Exception invalidResponse) {
+                        System.err.println("[CIE-AUDIT] Respuesta de Apps Script no es JSON válido");
                     }
                 }
             } catch (Exception ex) {
-                System.err.println("CIE audit unavailable: " + ex.getClass().getSimpleName());
+                System.err.println("[CIE-AUDIT] Fallo de comunicación: " + ex.getClass().getSimpleName()
+                        + ": " + String.valueOf(ex.getMessage()).replaceAll("https?://[^\\s]+", "[URL]"));
             } finally { if (con != null) con.disconnect(); }
         });
+        } catch (RejectedExecutionException queueFull) {
+            System.err.println("[CIE-AUDIT] Cola llena: auditoría omitida sin afectar respuesta de negocio");
+        }
     }
     private static String readBody(HttpURLConnection con) throws Exception {
         try (InputStream in = con.getInputStream();

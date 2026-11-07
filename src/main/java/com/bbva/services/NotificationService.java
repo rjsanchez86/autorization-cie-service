@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
@@ -18,7 +20,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.codehaus.jackson.map.ObjectMapper;
 
-/** Simulador de integracion CIE. Nunca ejecuta movimientos monetarios. */
+/** Simulador CIE: nunca ejecuta movimientos monetarios. */
 @Path("services")
 public class NotificationService {
     private static final ZoneId ZONE = ZoneId.of("America/Mexico_City");
@@ -26,9 +28,9 @@ public class NotificationService {
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HHmmss");
     private static final ObjectMapper INPUT_JSON = new ObjectMapper();
     private static final SecureRandom FOLIO_RANDOM = new SecureRandom();
-    // Limita peticiones demoradas. Los timeouts de proxies pueden cortar la conexion.
     private static final Semaphore DELAY_SLOTS = new Semaphore(2);
     private static final Pattern DELAY = Pattern.compile("(?:^|[\\s_])DELAY_(2M|5M|10M|150S)$");
+    private static final Pattern SCENARIO = Pattern.compile("(?:^|[\\s_])(SUSP|CANC|REJ|LIMIT|INV|DUP|UNREF|UNMER|NOENT|ANNUL|PROHIB|UNAVAIL)$");
 
     @PUT
     @Path("notification")
@@ -76,26 +78,20 @@ public class NotificationService {
     private Response processNotification(String tsec, NotificationDTO dto) {
         if (dto == null) return error(400, "JSON requerido");
         String tipo = trim(dto.getTipoper()).toUpperCase(Locale.ROOT);
-        if (missing(dto.getCanalor()) || missing(dto.getContror()) ||
-                missing(dto.getServior()) || missing(dto.getCnvenio()) ||
-                missing(dto.getGuiacie()) || dto.getNummens() == null ||
-                missing(dto.getTimesta()) || missing(dto.getTrminal()) ||
-                missing(dto.getRferenc()) || missing(dto.getMoneda()) ||
-                missing(dto.getIded()) || missing(dto.getTrns()) ||
-                !("CON".equals(tipo) || "PAG".equals(tipo) ||
-                  "COB".equals(tipo) || "REV".equals(tipo))) {
+        List<String> missingFields = missingFields(dto, tipo);
+        if (!missingFields.isEmpty()) {
+            // Solo nombres de campos; nunca registrar valores sensibles.
+            System.out.println("[CIE-VALIDACION] codresp=30 campos=" + String.join(",", missingFields));
             dto.setCodresp("30");
             return ok(dto, tsec);
         }
-        // Se valida el importe antes de activar un escenario de prueba.
         if (!"CON".equals(tipo) && (dto.getImptota() == null ||
                 !Double.isFinite(dto.getImptota()) || dto.getImptota() <= 0.0)) {
+            System.out.println("[CIE-VALIDACION] codresp=30 motivo=imptota_invalido");
             dto.setCodresp("30");
             return ok(dto, tsec);
         }
 
-        // Exclusivo para despliegues aislados de simulacion: cncepto activa el escenario.
-        // No usar este endpoint para transacciones reales.
         String concepto = trim(dto.getCncepto()).toUpperCase(Locale.ROOT);
         String codigo = codeForConcept(concepto);
         long delay = delayForConcept(concepto);
@@ -118,27 +114,42 @@ public class NotificationService {
         dto.setCodresp("00");
         ZonedDateTime now = ZonedDateTime.now(ZONE);
         if ("CON".equals(tipo)) {
-            // Valores exclusivamente simulados, no saldo de una cuenta real.
             dto.setImptota(650.91);
             dto.setImminem(207.05);
             dto.setImmaxem(1000.00);
             dto.setFhvigem(now.plusDays(30).toLocalDate().toString());
         } else if ("PAG".equals(tipo)) {
-            // Solo en PAG: fechas y folio de prueba si no llegaron informados.
             if (missing(dto.getFecpago())) dto.setFecpago(now.format(FECHA));
             if (missing(dto.getHorpago())) dto.setHorpago(now.format(HORA));
             if (missing(dto.getFlpagem())) dto.setFlpagem(generateTestFolio());
         }
-        // COB y REV son acuses simulados: no inventan nuevos folios ni fechas.
+        // COB y REV: no generar folios ni fechas adicionales.
         return ok(dto, tsec);
     }
 
+    /** Diagnostico de la validacion EXISTENTE; no altera el contrato funcional. */
+    private static List<String> missingFields(NotificationDTO dto, String tipo) {
+        List<String> fields = new ArrayList<>();
+        if (missing(dto.getCanalor())) fields.add("canalor");
+        if (missing(dto.getContror())) fields.add("contror");
+        if (missing(dto.getServior())) fields.add("servior");
+        if (missing(dto.getCnvenio())) fields.add("cnvenio");
+        if (missing(dto.getGuiacie())) fields.add("guiacie");
+        if (dto.getNummens() == null) fields.add("nummens");
+        if (missing(dto.getTimesta())) fields.add("timesta");
+        if (missing(dto.getTrminal())) fields.add("trminal");
+        if (missing(dto.getRferenc())) fields.add("rferenc");
+        if (missing(dto.getMoneda())) fields.add("moneda");
+        if (missing(dto.getIded())) fields.add("ided");
+        if (missing(dto.getTrns())) fields.add("trns");
+        if (!("CON".equals(tipo) || "PAG".equals(tipo) ||
+              "COB".equals(tipo) || "REV".equals(tipo))) fields.add("tipoper");
+        return fields;
+    }
+
     private static String codeForConcept(String concept) {
-        // Se reconoce solo el token final, opcionalmente antes de DELAY.
-        // Ejemplos: "Prueba REJ", "Prueba REJ_DELAY_2M".
         String scenario = concept.replaceFirst("(?:^|[\\s_])DELAY_(2M|5M|10M|150S)$", "").trim();
-        Matcher token = Pattern.compile("(?:^|[\\s_])(SUSP|CANC|REJ|LIMIT|INV|DUP|UNREF|UNMER|NOENT|ANNUL|PROHIB|UNAVAIL)$")
-                .matcher(scenario);
+        Matcher token = SCENARIO.matcher(scenario);
         return token.find() ? codeForToken(token.group(1)) : null;
     }
 
@@ -173,7 +184,6 @@ public class NotificationService {
     }
 
     private static String generateTestFolio() {
-        // 12 digitos; NO garantiza unicidad global entre Render y Railway.
         long value = 100000000000L + (long) (FOLIO_RANDOM.nextDouble() * 900000000000L);
         return Long.toString(value);
     }

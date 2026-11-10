@@ -29,7 +29,8 @@ public class NotificationService {
     private static final ObjectMapper INPUT_JSON = new ObjectMapper();
     private static final SecureRandom FOLIO_RANDOM = new SecureRandom();
     private static final Semaphore DELAY_SLOTS = new Semaphore(2);
-    private static final Pattern DELAY = Pattern.compile("(?:^|[\\s_])DELAY_(2M|5M|10M|150S)$");
+    // CAMBIO 1: DELAY_1S a DELAY_600S (segundos).
+    private static final Pattern DELAY = Pattern.compile("(?:^|[\\s_])DELAY_(\\d+)S$");
     private static final Pattern SCENARIO = Pattern.compile("(?:^|[\\s_])(SUSP|CANC|REJ|LIMIT|INV|DUP|UNREF|UNMER|NOENT|ANNUL|PROHIB|UNAVAIL)$");
 
     @PUT
@@ -148,7 +149,8 @@ public class NotificationService {
     }
 
     private static String codeForConcept(String concept) {
-        String scenario = concept.replaceFirst("(?:^|[\\s_])DELAY_(2M|5M|10M|150S)$", "").trim();
+        // CAMBIO 2: quitar DELAY_nS para reconocer escenarios como REJ DELAY_10S.
+        String scenario = concept.replaceFirst("(?:^|[\\s_])DELAY_\\d+S$", "").trim();
         Matcher token = SCENARIO.matcher(scenario);
         return token.find() ? codeForToken(token.group(1)) : null;
     }
@@ -172,14 +174,15 @@ public class NotificationService {
     }
 
     private static long delayForConcept(String concept) {
+        // CAMBIO 3: convertir segundos a milisegundos; maximo 600 segundos.
         Matcher matcher = DELAY.matcher(concept);
         if (!matcher.find()) return 0L;
-        switch (matcher.group(1)) {
-            case "2M": return 120000L;
-            case "5M": return 300000L;
-            case "10M": return 600000L;
-            case "150S": return 150000L;
-            default: return 0L;
+        try {
+            long segundos = Long.parseLong(matcher.group(1));
+            if (segundos < 1 || segundos > 600) return 0L;
+            return segundos * 1000L;
+        } catch (NumberFormatException ex) {
+            return 0L;
         }
     }
 

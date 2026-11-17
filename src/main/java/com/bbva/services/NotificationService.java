@@ -127,7 +127,7 @@ public class NotificationService {
                 dto.setFecpago(now.format(FECHA));
             if (missing(dto.getHorpago()))
                 dto.setHorpago(now.format(HORA));
-        } else if ("CON".equals(tipo)) {
+        } else if ("COB".equals(tipo)) {
             if (missing(dto.getFecpago()))
                 dto.setFecpago(now.format(FECHA));
             if (missing(dto.getHorpago()))

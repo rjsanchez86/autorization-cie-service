@@ -31,7 +31,8 @@ public class NotificationService {
     private static final Semaphore DELAY_SLOTS = new Semaphore(2);
     // CAMBIO 1: DELAY_1S a DELAY_600S (segundos).
     private static final Pattern DELAY = Pattern.compile("(?:^|[\\s_])DELAY_(\\d+)S$");
-    private static final Pattern SCENARIO = Pattern.compile("(?:^|[\\s_])(SUSP|CANC|REJ|LIMIT|INV|DUP|UNREF|UNMER|NOENT|ANNUL|PROHIB|UNAVAIL)$");
+    private static final Pattern SCENARIO = Pattern
+            .compile("(?:^|[\\s_])(SUSP|CANC|REJ|LIMIT|INV|DUP|UNREF|UNMER|NOENT|ANNUL|PROHIB|UNAVAIL)$");
 
     @PUT
     @Path("notification")
@@ -69,7 +70,7 @@ public class NotificationService {
     }
 
     private static void audit(Instant entry, long start, String rhoTraceId,
-                              String input, Response response) {
+            String input, Response response) {
         Object entity = response.getEntity();
         String output = entity instanceof String ? (String) entity : SheetAudit.toJson(entity);
         SheetAudit.send(entry, Instant.now(), start, rhoTraceId,
@@ -77,7 +78,8 @@ public class NotificationService {
     }
 
     private Response processNotification(String tsec, NotificationDTO dto) {
-        if (dto == null) return error(400, "JSON requerido");
+        if (dto == null)
+            return error(400, "JSON requerido");
         String tipo = trim(dto.getTipoper()).toUpperCase(Locale.ROOT);
         List<String> missingFields = missingFields(dto, tipo);
         if (!missingFields.isEmpty()) {
@@ -97,7 +99,8 @@ public class NotificationService {
         String codigo = codeForConcept(concepto);
         long delay = delayForConcept(concepto);
         if (delay > 0) {
-            if (!DELAY_SLOTS.tryAcquire()) return error(503, "Simulador ocupado");
+            if (!DELAY_SLOTS.tryAcquire())
+                return error(503, "Simulador ocupado");
             try {
                 Thread.sleep(delay);
             } catch (InterruptedException interrupted) {
@@ -120,9 +123,17 @@ public class NotificationService {
             dto.setImmaxem(1000.00);
             dto.setFhvigem(now.plusDays(30).toLocalDate().toString());
         } else if ("PAG".equals(tipo)) {
-            if (missing(dto.getFecpago())) dto.setFecpago(now.format(FECHA));
-            if (missing(dto.getHorpago())) dto.setHorpago(now.format(HORA));
-            if (missing(dto.getFlpagem())) dto.setFlpagem(generateTestFolio());
+            if (missing(dto.getFecpago()))
+                dto.setFecpago(now.format(FECHA));
+            if (missing(dto.getHorpago()))
+                dto.setHorpago(now.format(HORA));
+        } else if ("CON".equals(tipo)) {
+            if (missing(dto.getFecpago()))
+                dto.setFecpago(now.format(FECHA));
+            if (missing(dto.getHorpago()))
+                dto.setHorpago(now.format(HORA));
+            if (missing(dto.getFlpagem()))
+                dto.setFlpagem(generateTestFolio());
         }
         // COB y REV: no generar folios ni fechas adicionales.
         return ok(dto, tsec);
@@ -131,20 +142,33 @@ public class NotificationService {
     /** Diagnostico de la validacion EXISTENTE; no altera el contrato funcional. */
     private static List<String> missingFields(NotificationDTO dto, String tipo) {
         List<String> fields = new ArrayList<>();
-        if (missing(dto.getCanalor())) fields.add("canalor");
-        if (missing(dto.getContror())) fields.add("contror");
-        if (missing(dto.getServior())) fields.add("servior");
-        if (missing(dto.getCnvenio())) fields.add("cnvenio");
-        if (missing(dto.getGuiacie())) fields.add("guiacie");
-        if (dto.getNummens() == null) fields.add("nummens");
-        if (missing(dto.getTimesta())) fields.add("timesta");
-        if (missing(dto.getTrminal())) fields.add("trminal");
-        if (missing(dto.getRferenc())) fields.add("rferenc");
-        if (missing(dto.getMoneda())) fields.add("moneda");
-        if (missing(dto.getIded())) fields.add("ided");
-        if (missing(dto.getTrns())) fields.add("trns");
+        if (missing(dto.getCanalor()))
+            fields.add("canalor");
+        if (missing(dto.getContror()))
+            fields.add("contror");
+        if (missing(dto.getServior()))
+            fields.add("servior");
+        if (missing(dto.getCnvenio()))
+            fields.add("cnvenio");
+        if (missing(dto.getGuiacie()))
+            fields.add("guiacie");
+        if (dto.getNummens() == null)
+            fields.add("nummens");
+        if (missing(dto.getTimesta()))
+            fields.add("timesta");
+        if (missing(dto.getTrminal()))
+            fields.add("trminal");
+        if (missing(dto.getRferenc()))
+            fields.add("rferenc");
+        if (missing(dto.getMoneda()))
+            fields.add("moneda");
+        if (missing(dto.getIded()))
+            fields.add("ided");
+        if (missing(dto.getTrns()))
+            fields.add("trns");
         if (!("CON".equals(tipo) || "PAG".equals(tipo) ||
-              "COB".equals(tipo) || "REV".equals(tipo))) fields.add("tipoper");
+                "COB".equals(tipo) || "REV".equals(tipo)))
+            fields.add("tipoper");
         return fields;
     }
 
@@ -157,29 +181,44 @@ public class NotificationService {
 
     private static String codeForToken(String token) {
         switch (token) {
-            case "SUSP": return "03";
-            case "CANC": return "04";
-            case "REJ": return "05";
-            case "LIMIT": return "07";
-            case "INV": return "10";
-            case "DUP": return "12";
-            case "UNREF": return "13";
-            case "UNMER": return "14";
-            case "NOENT": return "15";
-            case "ANNUL": return "17";
-            case "PROHIB": return "20";
-            case "UNAVAIL": return "91";
-            default: return null;
+            case "SUSP":
+                return "03";
+            case "CANC":
+                return "04";
+            case "REJ":
+                return "05";
+            case "LIMIT":
+                return "07";
+            case "INV":
+                return "10";
+            case "DUP":
+                return "12";
+            case "UNREF":
+                return "13";
+            case "UNMER":
+                return "14";
+            case "NOENT":
+                return "15";
+            case "ANNUL":
+                return "17";
+            case "PROHIB":
+                return "20";
+            case "UNAVAIL":
+                return "91";
+            default:
+                return null;
         }
     }
 
     private static long delayForConcept(String concept) {
         // CAMBIO 3: convertir segundos a milisegundos; maximo 600 segundos.
         Matcher matcher = DELAY.matcher(concept);
-        if (!matcher.find()) return 0L;
+        if (!matcher.find())
+            return 0L;
         try {
             long segundos = Long.parseLong(matcher.group(1));
-            if (segundos < 1 || segundos > 600) return 0L;
+            if (segundos < 1 || segundos > 600)
+                return 0L;
             return segundos * 1000L;
         } catch (NumberFormatException ex) {
             return 0L;
@@ -191,8 +230,13 @@ public class NotificationService {
         return Long.toString(value);
     }
 
-    private static String trim(String s) { return s == null ? "" : s.trim(); }
-    private static boolean missing(String s) { return trim(s).isEmpty(); }
+    private static String trim(String s) {
+        return s == null ? "" : s.trim();
+    }
+
+    private static boolean missing(String s) {
+        return trim(s).isEmpty();
+    }
 
     private static Response error(int status, String message) {
         return Response.status(status).entity("{\"error\":\"" + message + "\"}")

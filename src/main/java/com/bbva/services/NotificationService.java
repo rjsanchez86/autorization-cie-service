@@ -198,8 +198,14 @@ public class NotificationService {
                 return "17";
             case "PROHIB":
                 return "20";
+            case "JSONER":
+                return "30";
+            case "TIMEOU":
+                return "68";
             case "UNAVAIL":
                 return "91";
+            case "SYSTEMF":
+                return "96";
             default:
                 return null;
         }

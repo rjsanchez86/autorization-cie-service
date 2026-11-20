@@ -122,13 +122,10 @@ public class NotificationService {
             dto.setImminem(207.05);
             dto.setImmaxem(1000.00);
             dto.setFhvigem(now.plusDays(30).toLocalDate().toString());
-        } else if ("PAG".equals(tipo)) {
+        } else if ("PAG".equals(tipo) || "COB".equals(tipo)) {
             dto.setFecpago(now.format(FECHA));
             dto.setHorpago(now.format(HORA));
-        } else if ("COB".equals(tipo)) {
-            dto.setFecpago(now.format(FECHA));
-            dto.setHorpago(now.format(HORA));
-            dto.setFlpagem(generateTestFolio());
+            dto.setFlpagem("123456789012");
         }
         // COB y REV: no generar folios ni fechas adicionales.
         return ok(dto, tsec);

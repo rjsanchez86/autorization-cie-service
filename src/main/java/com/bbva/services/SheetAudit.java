@@ -1,23 +1,24 @@
 package com.bbva.services;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.ArrayNode;
-import java.util.Iterator;
-import java.util.Map;
 import java.time.Instant;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 
 /** Auditoria best-effort: nunca interrumpe el servicio de negocio. */
 public final class SheetAudit {
@@ -35,6 +36,11 @@ public final class SheetAudit {
     }
     public static void send(Instant entry, Instant exit, long start, String rhoTraceId,
                             String input, String output, int status) {
+        if (rhoTraceId != null && "prueba".equalsIgnoreCase(rhoTraceId.trim())) {
+            System.out.println("[CIE-AUDIT] Registro omitido por x-rho-traceid=Prueba");
+            return;
+        }
+
         String url = System.getenv("CIE_AUDIT_URL");
         String secret = System.getenv("CIE_AUDIT_SECRET");
         String deployment = System.getenv("CIE_DEPLOY_ENV");
@@ -139,28 +145,27 @@ public final class SheetAudit {
         }
     }
 
-    private static void maskTree(JsonNode node) {
+ private static void maskTree(JsonNode node) {
         if (node.isArray()) {
-            for (JsonNode child : (ArrayNode) node) maskTree(child);
+            for (JsonNode child : (ArrayNode) node) {
+                maskTree(child);
+            }
         } else if (node.isObject()) {
             ObjectNode object = (ObjectNode) node;
-            Iterator<Map.Entry<String, JsonNode>> fields = object.getFields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
-                String name = field.getKey().toLowerCase(java.util.Locale.ROOT);
-                JsonNode child = field.getValue();
+            Iterator<String> names = object.getFieldNames();
+            while (names.hasNext()) {
+                String key = names.next();
+                String name = key.toLowerCase(java.util.Locale.ROOT);
+                JsonNode child = object.get(key);
                 if (name.matches("tsec|password|passwd|token|authorization|secret|api[_-]?key|cookie|set-cookie")
                         || name.matches("numetdc|ctacarg|dcocarg|aorigab|usuario|iban|cardnumber|pan")) {
-                    // No inventar un valor sensible cuando el dato original esta vacio.
-                    // Mantener null como null y cadena vacia como cadena vacia.
                     if (child == null || child.isNull()) {
                         continue;
                     }
                     if (child.isTextual() && child.asText().isEmpty()) {
                         continue;
                     }
-                    // Nunca almacenar credenciales ni identificadores completos.
-                    object.put(field.getKey(), "[REDACTED]");
+                    object.put(key, "[REDACTED]");
                 } else {
                     maskTree(child);
                 }

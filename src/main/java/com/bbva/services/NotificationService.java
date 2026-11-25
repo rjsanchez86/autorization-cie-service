@@ -126,6 +126,8 @@ public class NotificationService {
             dto.setFecpago(now.format(FECHA));
             dto.setHorpago(now.format(HORA));
             dto.setFlpagem("123456789012");
+        } else if("COB".equals(tipo)) {
+            dto.setCodresp("03");
         }
         // COB y REV: no generar folios ni fechas adicionales.
         return ok(dto, tsec);

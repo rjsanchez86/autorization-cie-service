@@ -29,10 +29,18 @@ public class NotificationService {
     private static final ObjectMapper INPUT_JSON = new ObjectMapper();
     private static final SecureRandom FOLIO_RANDOM = new SecureRandom();
     private static final Semaphore DELAY_SLOTS = new Semaphore(2);
-    // CAMBIO 1: DELAY_1S a DELAY_600S (segundos).
-    private static final Pattern DELAY = Pattern.compile("(?:^|[\\s_])DELAY_(\\d+)S$");
+
+    // Delays por operacion (ej: PAG_DELAY_5S, COB_DELAY_10S) y delay general (DELAY_10S)
+    private static final Pattern OP_DELAY = Pattern
+            .compile("(?:^|[\\s_])(CON|PAG|COB|REV)_DELAY_(\\d+)S(?:$|[\\s_])");
+    private static final Pattern DELAY = Pattern
+            .compile("(?:^|[\\s_])DELAY_(\\d+)S(?:$|[\\s_])");
+
+    // Escenarios por operacion (ej: PAG_05, COB_03, PAG_REJ, COB_SUSP) y escenario general
+    private static final Pattern OP_SCENARIO = Pattern
+            .compile("(?:^|[\\s_])(CON|PAG|COB|REV)_([A-Z0-9]{2,7})(?:$|[\\s_])");
     private static final Pattern SCENARIO = Pattern
-            .compile("(?:^|[\\s_])(SUSP|CANC|REJ|LIMIT|INV|DUP|UNREF|UNMER|NOENT|ANNUL|PROHIB|UNAVAIL)$");
+            .compile("(?:^|[\\s_])(SUSP|CANC|REJ|LIMIT|INV|DUP|UNREF|UNMER|NOENT|ANNUL|PROHIB|JSONER|TIMEOU|UNAVAIL|SYSTEMF)(?:$|[\\s_])");
 
     @PUT
     @Path("notification")
@@ -96,8 +104,9 @@ public class NotificationService {
         }
 
         String concepto = trim(dto.getCncepto()).toUpperCase(Locale.ROOT);
-        String codigo = codeForConcept(concepto);
-        long delay = delayForConcept(concepto);
+
+        // 1. Evaluar delay (especifico por operacion o general)
+        long delay = delayForConcept(tipo, concepto);
         if (delay > 0) {
             if (!DELAY_SLOTS.tryAcquire())
                 return error(503, "Simulador ocupado");
@@ -110,32 +119,40 @@ public class NotificationService {
                 DELAY_SLOTS.release();
             }
         }
-        if (codigo != null) {
+
+        // 2. Buscar codigo especifico para la operacion actual (ej. PAG_05, COB_03, COB_SUSP)
+        String codigo = codeForOperationAndConcept(tipo, concepto);
+
+        // 3. Si no hay especifico por operacion, buscar escenario general (ej. REJ, SUSP)
+        if (codigo == null) {
+            codigo = codeForConcept(concepto);
+        }
+
+        // Si existe un codigo forzado distinto de "00", responder con ese codigo
+        if (codigo != null && !"00".equals(codigo)) {
             dto.setCodresp(codigo);
             return ok(dto, tsec);
         }
 
+        // 4. Flujo exitoso ("00") por tipo de operacion
         ZonedDateTime now = ZonedDateTime.now(ZONE);
+        dto.setCodresp("00");
         if ("CON".equals(tipo)) {
-            dto.setCodresp("00");
             dto.setImptota(650.91);
             dto.setImminem(207.05);
             dto.setImmaxem(1000.00);
             dto.setFhvigem(now.plusDays(30).toLocalDate().toString());
         } else if ("PAG".equals(tipo)) {
-            dto.setCodresp("00");
             dto.setFecpago(now.format(FECHA));
             dto.setHorpago(now.format(HORA));
             dto.setFlpagem("123456789012");
         } else if ("COB".equals(tipo)) {
-            dto.setCodresp("03");
             dto.setFecpago(now.format(FECHA));
             dto.setHorpago(now.format(HORA));
             dto.setFlpagem("123456789012");
-        } else {
-            dto.setCodresp("00");
         }
-        // COB y REV: no generar folios ni fechas adicionales.
+        // REV devuelve codresp = "00" sin generar folios ni fechas adicionales.
+
         return ok(dto, tsec);
     }
 
@@ -172,9 +189,24 @@ public class NotificationService {
         return fields;
     }
 
+    private static String codeForOperationAndConcept(String tipo, String concept) {
+        String cleanConcept = stripDelays(concept);
+        Matcher matcher = OP_SCENARIO.matcher(cleanConcept);
+        while (matcher.find()) {
+            String op = matcher.group(1);
+            String value = matcher.group(2);
+            if (op.equals(tipo)) {
+                if (value.matches("\\d{2}")) {
+                    return value;
+                }
+                return codeForToken(value);
+            }
+        }
+        return null;
+    }
+
     private static String codeForConcept(String concept) {
-        // CAMBIO 2: quitar DELAY_nS para reconocer escenarios como REJ DELAY_10S.
-        String scenario = concept.replaceFirst("(?:^|[\\s_])DELAY_\\d+S$", "").trim();
+        String scenario = stripDelays(concept);
         Matcher token = SCENARIO.matcher(scenario);
         return token.find() ? codeForToken(token.group(1)) : null;
     }
@@ -216,19 +248,36 @@ public class NotificationService {
         }
     }
 
-    private static long delayForConcept(String concept) {
-        // CAMBIO 3: convertir segundos a milisegundos; maximo 600 segundos.
+    private static long delayForConcept(String tipo, String concept) {
+        Matcher opMatcher = OP_DELAY.matcher(concept);
+        while (opMatcher.find()) {
+            if (opMatcher.group(1).equals(tipo)) {
+                return parseSecondsToMillis(opMatcher.group(2));
+            }
+        }
         Matcher matcher = DELAY.matcher(concept);
-        if (!matcher.find())
-            return 0L;
+        if (matcher.find()) {
+            return parseSecondsToMillis(matcher.group(1));
+        }
+        return 0L;
+    }
+
+    private static long parseSecondsToMillis(String secondsStr) {
         try {
-            long segundos = Long.parseLong(matcher.group(1));
+            long segundos = Long.parseLong(secondsStr);
             if (segundos < 1 || segundos > 600)
                 return 0L;
             return segundos * 1000L;
         } catch (NumberFormatException ex) {
             return 0L;
         }
+    }
+
+    private static String stripDelays(String concept) {
+        return concept
+                .replaceAll("(?:^|[\\s_])(?:CON|PAG|COB|REV)_DELAY_\\d+S(?=$|[\\s_])", " ")
+                .replaceAll("(?:^|[\\s_])DELAY_\\d+S(?=$|[\\s_])", " ")
+                .trim();
     }
 
     private static String generateTestFolio() {

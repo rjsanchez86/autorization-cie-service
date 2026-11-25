@@ -115,19 +115,25 @@ public class NotificationService {
             return ok(dto, tsec);
         }
 
-        dto.setCodresp("00");
         ZonedDateTime now = ZonedDateTime.now(ZONE);
         if ("CON".equals(tipo)) {
+            dto.setCodresp("00");
             dto.setImptota(650.91);
             dto.setImminem(207.05);
             dto.setImmaxem(1000.00);
             dto.setFhvigem(now.plusDays(30).toLocalDate().toString());
-        } else if ("PAG".equals(tipo) || "COB".equals(tipo)) {
+        } else if ("PAG".equals(tipo)) {
+            dto.setCodresp("00");
             dto.setFecpago(now.format(FECHA));
             dto.setHorpago(now.format(HORA));
             dto.setFlpagem("123456789012");
-        } else if("COB".equals(tipo)) {
+        } else if ("COB".equals(tipo)) {
             dto.setCodresp("03");
+            dto.setFecpago(now.format(FECHA));
+            dto.setHorpago(now.format(HORA));
+            dto.setFlpagem("123456789012");
+        } else {
+            dto.setCodresp("00");
         }
         // COB y REV: no generar folios ni fechas adicionales.
         return ok(dto, tsec);

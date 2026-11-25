@@ -1,9 +1,9 @@
 package com.bbva.services;
 
 import javax.xml.bind.annotation.XmlRootElement;
-import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonProperty;
 
 @XmlRootElement
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -24,47 +24,14 @@ public class NotificationDTO {
     @JsonProperty("cnvenio")
     private String cnvenio;
 
-    @JsonProperty("comison")
-    private Double comison;
-
-    @JsonProperty("iva")
-    private Double iva;
-
-    @JsonProperty("bandera")
-    private String bandera;
-
-    @JsonProperty("numetdc")
-    private String numetdc;
-
-    @JsonProperty("tipprom")
-    private String tipprom;
-
-    @JsonProperty("marcapr")
-    private String marcapr;
-
-    @JsonProperty("tipotar")
-    private String tipotar;
-
-    @JsonProperty("plazoma")
-    private String plazoma;
-
     @JsonProperty("rferenc")
     private String rferenc;
 
     @JsonProperty("cncepto")
     private String cncepto;
 
-    @JsonProperty("imefect")
-    private Double imefect;
-
     @JsonProperty("imptota")
     private Double imptota;
-
-    @JsonProperty("ctacarg")
-    private String ctacarg;
-
-    @JsonProperty("disponi")
-    private Double disponi;
 
     @JsonProperty("moneda")
     private String moneda;
@@ -72,28 +39,6 @@ public class NotificationDTO {
     @JsonProperty("trminal")
     private String trminal;
 
-    @JsonProperty("usuario")
-    private String usuario;
-
-    @JsonProperty("folioca")
-    private String folioca;
-
-    @JsonProperty("tiptras")
-    private String tiptras;
-
-    @JsonProperty("dcocarg")
-    private String dcocarg;
-
-    @JsonProperty("referca")
-    private String referca;
-
-    @JsonProperty("aorigab")
-    private String aorigab;
-
-    @JsonProperty("referab")
-    private String referab;
-
-    // Campos adicionales para trazabilidad y respuesta del servicio
     @JsonProperty("guiacie")
     private String guiacie;
 
@@ -173,7 +118,7 @@ public class NotificationDTO {
 
     public NotificationDTO() {}
 
-    // Getters y Setters
+    // Getters y Setters (33 campos oficiales)
     public String getCanalor() { return canalor; }
     public void setCanalor(String canalor) { this.canalor = canalor; }
     public String getContror() { return contror; }
@@ -240,88 +185,28 @@ public class NotificationDTO {
     public void setFhvigem(String fhvigem) { this.fhvigem = fhvigem; }
     public String getCertiem() { return certiem; }
     public void setCertiem(String certiem) { this.certiem = certiem; }
-    public Double getComison() { return comison; }
-    public void setComison(Double comison) { this.comison = comison; }
-    public Double getIva() { return iva; }
-    public void setIva(Double iva) { this.iva = iva; }
-    public String getBandera() { return bandera; }
-    public void setBandera(String bandera) { this.bandera = bandera; }
-    public String getNumetdc() { return numetdc; }
-    public void setNumetdc(String numetdc) { this.numetdc = numetdc; }
-    public String getTipprom() { return tipprom; }
-    public void setTipprom(String tipprom) { this.tipprom = tipprom; }
-    public String getMarcapr() { return marcapr; }
-    public void setMarcapr(String marcapr) { this.marcapr = marcapr; }
-    public String getTipotar() { return tipotar; }
-    public void setTipotar(String tipotar) { this.tipotar = tipotar; }
-    public String getPlazoma() { return plazoma; }
-    public void setPlazoma(String plazoma) { this.plazoma = plazoma; }
-    public Double getImefect() { return imefect; }
-    public void setImefect(Double imefect) { this.imefect = imefect; }
-    public String getCtacarg() { return ctacarg; }
-    public void setCtacarg(String ctacarg) { this.ctacarg = ctacarg; }
-    public Double getDisponi() { return disponi; }
-    public void setDisponi(Double disponi) { this.disponi = disponi; }
-    public String getUsuario() { return usuario; }
-    public void setUsuario(String usuario) { this.usuario = usuario; }
-    public String getFolioca() { return folioca; }
-    public void setFolioca(String folioca) { this.folioca = folioca; }
-    public String getTiptras() { return tiptras; }
-    public void setTiptras(String tiptras) { this.tiptras = tiptras; }
-    public String getDcocarg() { return dcocarg; }
-    public void setDcocarg(String dcocarg) { this.dcocarg = dcocarg; }
-    public String getReferca() { return referca; }
-    public void setReferca(String referca) { this.referca = referca; }
-    public String getAorigab() { return aorigab; }
-    public void setAorigab(String aorigab) { this.aorigab = aorigab; }
-    public String getReferab() { return referab; }
-    public void setReferab(String referab) { this.referab = referab; }
 
-    /** Normaliza solo la salida JSON del simulador. No altera los valores de entrada antes de validarlos. */
+    /** Normaliza solo la salida JSON oficial (33 campos) y limpia espacios en campos de relleno. */
     public void normalizeForResponse() {
         if (this.canalor == null) this.canalor = "";
         if (this.contror == null) this.contror = "";
         if (this.servior == null) this.servior = "";
         if (this.tipoper == null) this.tipoper = "";
         if (this.cnvenio == null) this.cnvenio = "";
-        if (this.comison == null) this.comison = 0.0;
-        if (this.iva == null) this.iva = 0.0;
-        if (this.bandera == null) this.bandera = "";
-        if (this.numetdc == null) this.numetdc = "";
-        if (this.tipprom == null) this.tipprom = "";
-        if (this.marcapr == null) this.marcapr = "";
-        if (this.tipotar == null) this.tipotar = "";
-        if (this.plazoma == null) this.plazoma = "";
         if (this.rferenc == null) this.rferenc = "";
         if (this.cncepto == null) this.cncepto = "";
-        if (this.imefect == null) this.imefect = 0.0;
         if (this.imptota == null) this.imptota = 0.0;
-        if (this.ctacarg == null) this.ctacarg = "";
-        if (this.disponi == null) this.disponi = 0.0;
         if (this.moneda == null) this.moneda = "";
         if (this.trminal == null) this.trminal = "";
-        if (this.usuario == null) this.usuario = "";
-        if (this.folioca == null) this.folioca = "";
-        if (this.tiptras == null) this.tiptras = "";
-        if (this.dcocarg == null) this.dcocarg = "";
-        if (this.referca == null) this.referca = "";
-        if (this.aorigab == null) this.aorigab = "";
-        if (this.referab == null) this.referab = "";
         if (this.guiacie == null) this.guiacie = "";
         if (this.nummens == null) this.nummens = 0L;
         if (this.idmsjpa == null) this.idmsjpa = 0L;
         if (this.timesta == null) this.timesta = "";
-        if (this.fillmas == null) this.fillmas = "";
-        if (this.filesp2 == null) this.filesp2 = "";
-        if (this.fillnum == null) this.fillnum = "";
-        if (this.filesp1 == null) this.filesp1 = "";
         if (this.ided == null) this.ided = "";
-        if (this.autoriz == null) this.autoriz = "";
         if (this.codresp == null) this.codresp = "";
         if (this.trns == null) this.trns = "";
         if (this.fecpago == null) this.fecpago = "";
         if (this.horpago == null) this.horpago = "";
-        if (this.codfijo == null) this.codfijo = "";
         if (this.feccap == null) this.feccap = "";
         if (this.flpagem == null) this.flpagem = "";
         if (this.tppagem == null) this.tppagem = "";
@@ -330,5 +215,12 @@ public class NotificationDTO {
         if (this.immaxem == null) this.immaxem = 0.0;
         if (this.fhvigem == null) this.fhvigem = "";
         if (this.certiem == null) this.certiem = "";
+
+        this.fillmas = (this.fillmas == null || this.fillmas.trim().isEmpty()) ? "" : this.fillmas;
+        this.filesp2 = (this.filesp2 == null || this.filesp2.trim().isEmpty()) ? "" : this.filesp2;
+        this.fillnum = (this.fillnum == null || this.fillnum.trim().isEmpty()) ? "" : this.fillnum;
+        this.filesp1 = (this.filesp1 == null || this.filesp1.trim().isEmpty()) ? "" : this.filesp1;
+        this.autoriz = (this.autoriz == null || this.autoriz.trim().isEmpty()) ? "" : this.autoriz;
+        this.codfijo = (this.codfijo == null || this.codfijo.trim().isEmpty()) ? "" : this.codfijo;
     }
 }

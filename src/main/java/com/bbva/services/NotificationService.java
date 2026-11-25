@@ -142,17 +142,31 @@ public class NotificationService {
             dto.setImminem(207.05);
             dto.setImmaxem(1000.00);
             dto.setFhvigem(now.plusDays(30).toLocalDate().toString());
+            dto.setFecpago("");
+            dto.setHorpago("");
+            dto.setFlpagem("");
         } else if ("PAG".equals(tipo)) {
+            dto.setImminem(0.0);
+            dto.setImmaxem(0.0);
+            dto.setFhvigem("");
             dto.setFecpago(now.format(FECHA));
             dto.setHorpago(now.format(HORA));
             dto.setFlpagem("123456789012");
         } else if ("COB".equals(tipo)) {
+            dto.setImminem(0.0);
+            dto.setImmaxem(0.0);
+            dto.setFhvigem("");
             dto.setFecpago(now.format(FECHA));
             dto.setHorpago(now.format(HORA));
             dto.setFlpagem("123456789012");
-            dto.setFhvigem(now.plusMonths(1).toLocalDate().toString());
+        } else if ("REV".equals(tipo)) {
+            dto.setImminem(0.0);
+            dto.setImmaxem(0.0);
+            dto.setFhvigem("");
+            dto.setFecpago("");
+            dto.setHorpago("");
+            dto.setFlpagem("");
         }
-        // REV devuelve codresp = "00" sin generar folios ni fechas adicionales.
 
         return ok(dto, tsec);
     }

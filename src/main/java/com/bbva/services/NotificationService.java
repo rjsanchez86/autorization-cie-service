@@ -145,6 +145,7 @@ public class NotificationService {
             dto.setFecpago("");
             dto.setHorpago("");
             dto.setFlpagem("");
+            dto.setClcurem("Dato");
         } else if ("PAG".equals(tipo)) {
             dto.setImminem(0.0);
             dto.setImmaxem(0.0);

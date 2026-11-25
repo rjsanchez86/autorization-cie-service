@@ -150,6 +150,7 @@ public class NotificationService {
             dto.setFecpago(now.format(FECHA));
             dto.setHorpago(now.format(HORA));
             dto.setFlpagem("123456789012");
+            dto.setFhvigem(now.plusMonths(1).toLocalDate().toString());
         }
         // REV devuelve codresp = "00" sin generar folios ni fechas adicionales.
 

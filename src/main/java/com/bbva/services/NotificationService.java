@@ -146,7 +146,6 @@ public class NotificationService {
             dto.setHorpago("");
             dto.setFlpagem("");
             dto.setClcurem("Dato");
-            dto.setCncepto("Prueba CON");
         } else if ("PAG".equals(tipo)) {
             dto.setImminem(0.0);
             dto.setImmaxem(0.0);
